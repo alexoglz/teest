@@ -11,26 +11,26 @@ namespace EplanConnection
         {
             try
             {
-                // Inicializar el entorno de EPLAN
+                // Initialize the EPLAN environment
                 new Settings().GlobalSettings["USER.EntranceProgramPath"] = @"C:\EPLAN\";
-                Console.WriteLine("Iniciando EPLAN...");
+                Console.WriteLine("Starting EPLAN...");
 
-                // Crear un nuevo proyecto o abrir uno existente
-                string projectPath = @"C:\Path\To\Your\Project.elk"; // Cambia el path a tu proyecto
+                // Create a new project or open an existing one
+                string projectPath = @"C:\Path\To\Your\Project.elk"; // Change this to the path of your project
                 ProjectManager projectManager = new ProjectManager();
                 
                 if (projectManager.IsProjectOpen)
                 {
-                    Console.WriteLine("Un proyecto ya está abierto.");
+                    Console.WriteLine("A project is already open.");
                 }
                 else
                 {
-                    Console.WriteLine($"Abriendo el proyecto: {projectPath}");
+                    Console.WriteLine($"Opening project: {projectPath}");
                     projectManager.OpenProject(projectPath);
-                    Console.WriteLine("Proyecto abierto exitosamente.");
+                    Console.WriteLine("Project successfully opened.");
                 }
 
-                // Aquí puedes agregar más lógica o interactuar con el proyecto
+                // Add more logic here or interact with the project as needed
             }
             catch (Exception ex)
             {
