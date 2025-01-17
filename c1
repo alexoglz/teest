@@ -1,0 +1,41 @@
+using System;
+using Eplan.EplApi.Base;
+using Eplan.EplApi.ApplicationFramework;
+using Eplan.EplApi.HEServices;
+
+namespace EplanConnection
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            try
+            {
+                // Inicializar el entorno de EPLAN
+                new Settings().GlobalSettings["USER.EntranceProgramPath"] = @"C:\EPLAN\";
+                Console.WriteLine("Iniciando EPLAN...");
+
+                // Crear un nuevo proyecto o abrir uno existente
+                string projectPath = @"C:\Path\To\Your\Project.elk"; // Cambia el path a tu proyecto
+                ProjectManager projectManager = new ProjectManager();
+                
+                if (projectManager.IsProjectOpen)
+                {
+                    Console.WriteLine("Un proyecto ya está abierto.");
+                }
+                else
+                {
+                    Console.WriteLine($"Abriendo el proyecto: {projectPath}");
+                    projectManager.OpenProject(projectPath);
+                    Console.WriteLine("Proyecto abierto exitosamente.");
+                }
+
+                // Aquí puedes agregar más lógica o interactuar con el proyecto
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+    }
+}
