@@ -1,41 +1,895 @@
-using System;
-using Eplan.EplApi.Base;
-using Eplan.EplApi.ApplicationFramework;
-using Eplan.EplApi.HEServices;
+' This module pastes the values under the headers
 
-namespace EplanConnection
-{
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            try
-            {
-                // Initialize the EPLAN environment
-                new Settings().GlobalSettings["USER.EntranceProgramPath"] = @"C:\EPLAN\";
-                Console.WriteLine("Starting EPLAN...");
 
-                // Create a new project or open an existing one
-                string projectPath = @"C:\Path\To\Your\Project.elk"; // Change this to the path of your project
-                ProjectManager projectManager = new ProjectManager();
+Sub Step_1_PasteMLI()
+
+    Dim PBOMInput As Worksheet
+    
+    Dim BOMConstruction As Worksheet
+    
+    Dim i As Long
+    
+    Dim Step As Long
+        
+    Set PBOMInput = ThisWorkbook.Sheets("PBOM Input")
+    
+    Set BOMConstruction = ThisWorkbook.Sheets("BOM CONSTRUCTION")
+    
+    
+    LastRowInput = PBOMInput.Cells(PBOMInput.Rows.Count, "A").End(xlUp).Row
+
+    
+    Step = 2
+    ' Starts from 3 because the header is not consider
+    For i = 3 To LastRowInput
+        If PBOMInput.Cells(i, "B").Value <> "" Then
+            BOMConstruction.Cells(Step, "N").Value = PBOMInput.Cells(i, "A").Value ' Display name
+            BOMConstruction.Cells(Step, "O").Value = PBOMInput.Cells(i, "B").Value ' ENG Status
+            BOMConstruction.Cells(Step, "P").Value = PBOMInput.Cells(i, "C").Value ' Final Action
+            BOMConstruction.Cells(Step, "Q").Value = PBOMInput.Cells(i, "E").Value ' Direct Release PN
+            BOMConstruction.Cells(Step, "R").Value = PBOMInput.Cells(i, "F").Value ' Clone From PN
+            BOMConstruction.Cells(Step, "S").Value = PBOMInput.Cells(i, "H").Value ' UNIT QTY
+            BOMConstruction.Cells(Step, "T").Value = PBOMInput.Cells(i, "I").Value ' SITE QTY
+            BOMConstruction.Cells(Step, "U").Value = PBOMInput.Cells(i, "J").Value ' CCB Disposition Final
+            BOMConstruction.Cells(Step, "V").Value = PBOMInput.Cells(i, "L").Value ' CM Instructions
+            BOMConstruction.Cells(Step, "W").Value = PBOMInput.Cells(i, "M").Value ' ENG Request New PN
+            BOMConstruction.Cells(Step, "X").Value = PBOMInput.Cells(i, "N").Value ' CM Clone
+            
+            Step = Step + 1
+        End If
+        
+    Next i
+    
+    MsgBox "PBOM copied"
+    
+End Sub
+
+
+Sub Step_2_IJK()
+
+    Dim PBOMInput As Worksheet
+    
+    Dim BOMConstruction As Worksheet
+    
+    Dim i As Long
+    Dim j As Long
+    
+    Dim Step As Long
+        
+    Set PBOMInput = ThisWorkbook.Sheets("PBOM Input")
+    
+    Set BOMConstruction = ThisWorkbook.Sheets("BOM CONSTRUCTION")
+    
+    
+    
+   
+    
+    
+    LastRowBOMConstruction = BOMConstruction.Cells(BOMConstruction.Rows.Count, "N").End(xlUp).Row
+    
+    LastRowInput = PBOMInput.Cells(PBOMInput.Rows.Count, "A").End(xlUp).Row
+    
+    Step = 2
+    
+    For i = 2 To LastRowBOMConstruction
+        If Left(BOMConstruction.Cells(i, "P").Value, 3) = "SCH" Then
+            BOMConstruction.Cells(i, "K").Value = "SCH"
+            BOMConstruction.Cells(i, "K").Interior.Color = RGB(228, 201, 255)
+        End If
+        
+        If Left(BOMConstruction.Cells(i, "P").Value, 2) = "DR" Then
+            BOMConstruction.Cells(i, "K").Value = "DR"
+            BOMConstruction.Cells(i, "K").Interior.Color = RGB(198, 225, 180)
+        End If
+        
+        If Left(BOMConstruction.Cells(i, "P").Value, 6) = "REMOVE" Then
+            BOMConstruction.Cells(i, "K").Value = "NA"
+            BOMConstruction.Cells(i, "K").Interior.Color = RGB(255, 199, 206)
+        End If
+    Next i
+    
+    ' PIN column process
+    For i = 2 To LastRowBOMConstruction
+        BOMConstruction.Cells(i, "J").Value = Right(BOMConstruction.Cells(i, "N").Value, 4)
+    Next i
+    
+    
+    
+    ' System column
+    Step = 2
+    Dim DisplayHeader As String
+    For i = 3 To LastRowInput
+        If PBOMInput.Cells(i, "A").Value <> "" And PBOMInput.Cells(i, "B").Value = "" And PBOMInput.Cells(i + 1, "A").Value <> "" And PBOMInput.Cells(i + 1, "B").Value <> "" Then
+            DisplayHeader = PBOMInput.Cells(i, "A").Value
+            j = i + 1
+            While PBOMInput.Cells(j, "B").Value <> ""
+                BOMConstruction.Cells(Step, "I").Value = DisplayHeader
+                j = j + 1
+                Step = Step + 1
+            Wend
+        End If
+    Next i
+    
+    
+    MsgBox "Systems captured"
+    
+End Sub
+
+
+
+Sub Step_3_AToG()
+    Dim PBOMInput As Worksheet
+    Dim DataManagement As Worksheet
+    Set DataManagement = ThisWorkbook.Sheets("DataManagement")
+    Dim BOMConstruction As Worksheet
+    
+    Dim i As Long
+    Dim j As Long
+    
+    Dim FileName As String
+    Dim AlterLibrum As Workbook
+    Dim AlterSheet As Worksheet
+    
+    Dim Step As Long
+        
+    Set PBOMInput = ThisWorkbook.Sheets("PBOM Input")
+    
+    Set BOMConstruction = ThisWorkbook.Sheets("BOM CONSTRUCTION")
+    
+    LastRowBOMConstruction = BOMConstruction.Cells(BOMConstruction.Rows.Count, "N").End(xlUp).Row
+    
+    
+    
+    
+    
+    
+    ' Process for column A
+    For i = 2 To LastRowBOMConstruction
+        If BOMConstruction.Cells(i, "K").Value = "NA" Then
+            BOMConstruction.Cells(i, "A").Value = "Remove"
+        Else
+            BOMConstruction.Cells(i, "A").Value = "Add"
+        End If
+    Next i
+    
+    
+    
+   
+    ' Process for column E
+    For i = 2 To LastRowBOMConstruction
+        BOMConstruction.Cells(i, "E").Value = Trim(BOMConstruction.Cells(i, "N").Value)
+    Next i
+    
+    
+    ' Process for column F
+    For i = 2 To LastRowBOMConstruction
+        BOMConstruction.Cells(i, "F").Value = BOMConstruction.Cells(i, "S").Value
+    Next i
+    
+    ' Process for column X
+    ' This is the process to get the values of the clone parts
+    Set AlterLibrum = Workbooks.Open(DataManagement.Cells(1, "K").Value)
+    Set AlterSheet = AlterLibrum.Sheets("CloneParts")
+    LastRowAlterLibrum = AlterSheet.Cells(AlterSheet.Rows.Count, "M").End(xlUp).Row
+    For i = 2 To LastRowBOMConstruction
+        For j = 2 To LastRowAlterLibrum
+            If BOMConstruction.Cells(i, "E").Value = AlterSheet.Cells(j, "M").Value Then
+                BOMConstruction.Cells(i, "X").Value = AlterSheet.Cells(j, "O").Value '  NOTE THIS
+            End If
+        Next j
+    Next i
+    
+    
+    AlterLibrum.Close False
+    
+    
+    
+    ' Process for column C
+    ' IF(M3="DR",S3, IF(R3= "SCH (Use ENG Development Part)",S3,IF(M3="SCH",Z3," ")))
+    For i = 2 To LastRowBOMConstruction
+        If BOMConstruction.Cells(i, "K").Value = "DR" Then
+            BOMConstruction.Cells(i, "C").Value = BOMConstruction.Cells(i, "Q").Value
+        End If
+        If BOMConstruction.Cells(i, "P").Value = "SCH (Use ENG Development Part)" Then
+            BOMConstruction.Cells(i, "C").Value = BOMConstruction.Cells(i, "Q").Value
+        ElseIf BOMConstruction.Cells(i, "K").Value = "SCH" Then
+            BOMConstruction.Cells(i, "C").Value = BOMConstruction.Cells(i, "X").Value
+        End If
+    Next i
+    
+    
+    
+    MsgBox "EBOM formulas captured"
+
+End Sub
+
+Sub FullMacro()
+    UserForm1.Show
+End Sub
+
+' This module contains all the filters process
+
+' 1.COMPARE TO EBOM-IN WORK [UPDATED] [PENDING TO ADD PHASE STATUS PROCESS]
+Sub Step_4_Compare_EBOM_IN_WORK()
+    
+    Dim InWorkFile As String ' Route to the In Work Workbook
+    Dim ws As Worksheet
+    Dim InWork As Workbook
+    Dim wsInWork As Worksheet
+    Dim i As Long
+    Dim j As Long
+    Dim EID As String
+    Dim EIDInWork As String
+    
+    
+    Dim DataManagement As Worksheet
+    
+    Set DataManagement = ThisWorkbook.Sheets("DataManagement")
+    
+    'InWorkFile = "C:\Users\223114425\Desktop\Quality Macro\UNIT BOM Construction - Quality Checks\1553292 GT ACCY EBOM - In Work.xlsx"
+    InWorkFile = DataManagement.Cells(4, "K").Value
+    
+    
+    Set ws = ThisWorkbook.Sheets("BOM CONSTRUCTION")
+    
+    LastRowBOMConstruction = ws.Cells(ws.Rows.Count, "F").End(xlUp).Row
+    
+    Set InWork = Workbooks.Open(InWorkFile)
+    
+    Set wsInWork = InWork.Worksheets(1)
+    
+    
+    LastRowInWorkFile = wsInWork.Cells(wsInWork.Rows.Count, "I").End(xlUp).Row
+    
+    For i = 2 To LastRowBOMConstruction
+        EID = ws.Cells(i, "E").Value
+        For j = 2 To LastRowInWorkFile
+            EIDInWork = wsInWork.Cells(j, "I")
+            If EID = EIDInWork Then
+                ws.Cells(i, "AB").Value = wsInWork.Cells(j, "I") ' Gets the EID column
+                ws.Cells(i, "AC").Value = wsInWork.Cells(j, "U") ' Gets the "Name" column
+                ws.Cells(i, "AE").Value = wsInWork.Cells(j, "V") ' Gets the "Qty" column
+                ws.Cells(i, "AD").Value = wsInWork.Cells(j, "F").Value ' Gets "Phase" column
+            End If
+        Next j
+    Next i
+    
+    InWork.Close SaveChanges:=False
+    
+    '=IF($G3=AD3,"Same EID", "Different EID") SHOW THIS FORMULA
+    
+    For i = 2 To LastRowBOMConstruction
+        ' Conditional for "Same EID ?" column
+        If ws.Cells(i, "E").Value = ws.Cells(i, "AB").Value Then
+            ws.Cells(i, "AF").Value = "Same EID"
+        Else
+            ws.Cells(i, "AF").Value = "Different EID"
+        End If
+        
+        
+        
+        
+        
+        
+        
+        
+        ' Conditional for "Same PN ?" column
+        If ws.Cells(i, "C").Value = ws.Cells(i, "AC").Value Then
+            ws.Cells(i, "AG").Value = "Same PN"
+        Else
+            ws.Cells(i, "AG").Value = "Different PN"
+        End If
+        
+        ' Conditional for "Same QTY ?" column
+        If ws.Cells(i, "F").Value = ws.Cells(i, "AE").Value Then
+            ws.Cells(i, "AH").Value = "Same QTY"
+        Else
+            ws.Cells(i, "AH").Value = "Different QTY"
+        End If
+    Next i
+    
+    MsgBox "EBOM IN-WORK Comparison completed"
+    
+End Sub
+
+
+
+
+' 2.COMPARE TO EBOM-RELEASED [UPDATED]
+Sub Step_5_Compare_To_EBOM_Released()
+    
+    
+    Dim EBOMReleasedFile As String ' Route to the In Work Workbook
+    Dim ws As Worksheet
+    Dim EBOMReleased As Workbook
+    Dim wsEBOMReleased As Worksheet
+    Dim i As Long
+    Dim j As Long
+    Dim EID As String
+    Dim EIDEBOMReleased As String
+    
+    Dim DataManagement As Worksheet
+    
+    Set DataManagement = ThisWorkbook.Sheets("DataManagement")
+    
+    'EBOMReleasedFile = "C:\Users\223114425\Desktop\Quality Macro\UNIT BOM Construction - Quality Checks\1553292 GT ACCY EBOM - Released.xlsx"
+    EBOMReleasedFile = DataManagement.Cells(7, "K").Value
+    
+    
+    Set ws = ThisWorkbook.Sheets("BOM CONSTRUCTION")
+    
+    LastRowBOMConstruction = ws.Cells(ws.Rows.Count, "F").End(xlUp).Row
+    
+    Set EBOMReleased = Workbooks.Open(EBOMReleasedFile)
+    
+    Set wsEBOMReleased = EBOMReleased.Worksheets(1)
+    
+    
+    LastRowEBOMReleased = wsEBOMReleased.Cells(wsEBOMReleased.Rows.Count, "I").End(xlUp).Row
+    
+    For i = 2 To LastRowBOMConstruction
+        EID = ws.Cells(i, "E").Value
+        For j = 2 To LastRowEBOMReleased
+            EIDEBOMReleased = wsEBOMReleased.Cells(j, "I")
+            If EID = EIDEBOMReleased Then
+                ws.Cells(i, "AK").Value = wsEBOMReleased.Cells(j, "I") ' Gets the EID column
+                ws.Cells(i, "AL").Value = wsEBOMReleased.Cells(j, "U") ' Gets the "Name" column
+                ws.Cells(i, "AM").Value = wsEBOMReleased.Cells(j, "V") ' Gets the "Qty" column
+            End If
+        Next j
+    Next i
+    
+    
+    EBOMReleased.Close SaveChanges:=False
+    
+    '=IF($G3=AD3,"Same EID", "Different EID") SHOW THIS FORMULA
+    
+    For i = 2 To LastRowBOMConstruction
+        ' Conditional for "Same EID ?" column
+        If ws.Cells(i, "E").Value = ws.Cells(i, "AK").Value Then
+            ws.Cells(i, "AN").Value = "Same EID"
+        Else
+            ws.Cells(i, "AN").Value = "Different EID"
+        End If
+        
+        ' Conditional for "Same PN ?" column
+        If ws.Cells(i, "C").Value = ws.Cells(i, "AL").Value Then
+            ws.Cells(i, "AO").Value = "Same PN"
+        Else
+            ws.Cells(i, "AO").Value = "Different PN"
+        End If
+        
+        ' Conditional for "Same QTY ?" column
+        If ws.Cells(i, "F").Value = ws.Cells(i, "AM").Value Then
+            ws.Cells(i, "AP").Value = "Same QTY"
+        Else
+            ws.Cells(i, "AP").Value = "Different QTY"
+        End If
+    Next i
+    
+    MsgBox "EBOM Released Comparison completed"
+
+End Sub
+
+
+
+
+
+
+' 3.COMPARE TO ENG VIEW-PLANNING
+Sub Step_6_Compare_To_ENG_VIEW_PLANNING()
+    
+    
+    Dim ENGVPFile As String ' Route to the In Work Workbook
+    Dim ws As Worksheet
+    Dim EngViewPlan As Workbook
+    Dim wsEngViewPlan As Worksheet
+    Dim i As Long
+    Dim j As Long
+    Dim EID As String ' Pending to review its use
+    Dim EIDEngViewPlan As String ' Pending to review its use
+    
+    ' NOTE THIS [DELETE OR REVIEW]
+    ENGVPFile = "C:\Users\223114425\Desktop\Quality Macro\UNIT BOM Construction - Quality Checks\1553292 ML-7C1PHB66-1 - Planning.xlsx"
+    
+    Set ws = ThisWorkbook.Sheets("BOM CONSTRUCTION")
+    
+    LastRowBOMConstruction = ws.Cells(ws.Rows.Count, "F").End(xlUp).Row
+    
+    Set EngViewPlan = Workbooks.Open(ENGVPFile)
+    
+    Set wsEngViewPlan = EngViewPlan.Sheets("ENG View")
+    
+    
+    LastRowEngViewPlan = wsEngViewPlan.Cells(wsEngViewPlan.Rows.Count, "B").End(xlUp).Row
+    
+    For i = 2 To LastRowBOMConstruction
+        EID = ws.Cells(i, "F").Value ' HERE, "F" column might change according to the feedback given
+        For j = 2 To LastRowEngViewPlan
+            EIDEngViewPlan = wsEngViewPlan.Cells(j, "B")
+            If EID = EIDEngViewPlan Then
+                ws.Cells(i, "AT").Value = wsEngViewPlan.Cells(j, "B") ' Gets the EID column
+                ws.Cells(i, "AU").Value = wsEngViewPlan.Cells(j, "C") ' Gets the "Name" column
+                ws.Cells(i, "AV").Value = wsEngViewPlan.Cells(j, "L") ' Gets the "Qty" column
+            End If
+        Next j
+    Next i
+    
+    
+    EngViewPlan.Close SaveChanges:=False
+    
+    
+    
+    For i = 2 To LastRowBOMConstruction
+        ' Conditional for "Same EID ?" column
+        If ws.Cells(i, "G").Value = ws.Cells(i, "AT").Value Then
+            ws.Cells(i, "AW").Value = "Same EID"
+        Else
+            ws.Cells(i, "AW").Value = "Different EID"
+        End If
+        
+        ' Conditional for "Same PN ?" column
+        If ws.Cells(i, "D").Value = ws.Cells(i, "AU").Value Then
+            ws.Cells(i, "AX").Value = "Same PN"
+        Else
+            ws.Cells(i, "AX").Value = "Different PN"
+        End If
+        
+        ' Conditional for "Same QTY ?" column
+        If ws.Cells(i, "H").Value = ws.Cells(i, "AV").Value Then
+            ws.Cells(i, "AY").Value = "Same QTY"
+        Else
+            ws.Cells(i, "AY").Value = "Different QTY"
+        End If
+    Next i
+    
+    MsgBox "Done"
+
+
+
+
+
+    
+End Sub
+
+
+
+' This module stores the UNIT BOM process
+
+Sub ColumnsCreation(ColNum As Integer)
+    Dim i As Long
+    Dim j As Long
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("BOM CONSTRUCTION")
+    Dim StartColumn As Integer
+    StartColumn = 44
+    
+    For i = 1 To ColNum ' Number of times this process will repeate
+    
+        For j = 1 To 3
+        
+            If j = 1 Then
+                ws.Cells(1, StartColumn).Value = "COMPARE TO ENG VIEW-PLANNING U" & i
+            ElseIf j = 2 Then
+                ws.Cells(1, StartColumn).Value = "COMPARE TO FUNCTION VIEW-PLANNING U" & i
+            ElseIf j = 3 Then
+                ws.Cells(1, StartColumn).Value = "COMPARE TO CONF VIEW-PLANNING U" & i
+            End If
+            
+            ws.Cells(1, StartColumn + 1).Value = "VL EID"
+            ws.Cells(1, StartColumn + 2).Value = "VL PN"
+            ws.Cells(1, StartColumn + 3).Value = "VL QTY"
+            ws.Cells(1, StartColumn + 4).Value = "SAME EID ?"
+            ws.Cells(1, StartColumn + 5).Value = "SAME PN ?"
+            ws.Cells(1, StartColumn + 6).Value = "SAME QTY ?"
+            ws.Columns(StartColumn + 7).Interior.Color = RGB(0, 0, 0)
+            StartColumn = StartColumn + 8
+        Next j
+        
+        
+    Next i
+    
+    StartColumn = 44
+    
+End Sub
+
+' DONT DELETE. IT IS IMPORTANT.
+' The UNIT BOM process needs as parameters: number of units
+Sub FileManager(posi As Integer, Word As String)
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("DataManagement")
+    
+    ws.Cells(posi, "A").Value = Word
+
+End Sub
+
+
+'This part does the BOM comparison
+Sub Step_6_BOM_COMPARISON()
+
+    Dim DM As Worksheet
+    Dim BC As Worksheet
+    Set DM = ThisWorkbook.Sheets("DataManagement")
+    Set BC = ThisWorkbook.Sheets("BOM CONSTRUCTION")
+    LastRowBC = BC.Cells(BC.Rows.Count, "E").End(xlUp).Row
+    LastDM = DM.Cells(DM.Rows.Count, "A").End(xlUp).Row
+    Dim BOMFiles() As String
+    ReDim BOMFiles(1 To LastDM) As String ''''''''''''''''''''''-----------------------
+    Dim i As Long
+    Dim j As Long
+    Dim k As Long
+    Dim g As Long
+    
+    ' These are the sheets contained in the book
+    Dim EngViewSheet As Worksheet
+    Dim FuncViewSheet As Worksheet
+    Dim ConfigViewSheet As Worksheet
+    
+    Dim Times As Integer 'NOTE THIS ------------------------------------------------
+    
+    For i = 1 To LastDM
+        BOMFiles(i) = DM.Cells(i, "A").Value
+    Next i
+    
+    Times = DM.Cells(1, "C") '----------------------------
+    
+    Dim SelectedWorkbook As Workbook
+    
+    Dim StartingPoint As Long
+    
+    
+    LastColumnBOMConstruction = BC.Cells(1, BC.Columns.Count).End(xlToLeft).Column
+    
+    For i = 1 To Times
+    
+        ' Open file i
+        Set SelectedWorkbook = Workbooks.Open(BOMFiles(i))
+        DM.Cells(i, "B").Value = "Seen"
+        For j = 42 To LastColumnBOMConstruction
+            If BC.Cells(1, j).Value = "COMPARE TO ENG VIEW-PLANNING U" & i Then
                 
-                if (projectManager.IsProjectOpen)
-                {
-                    Console.WriteLine("A project is already open.");
-                }
-                else
-                {
-                    Console.WriteLine($"Opening project: {projectPath}");
-                    projectManager.OpenProject(projectPath);
-                    Console.WriteLine("Project successfully opened.");
-                }
+                'ENG VIEW
+                Set EngViewSheet = SelectedWorkbook.Sheets("ENG VIEW")
+                LastRowEngView = EngViewSheet.Cells(EngViewSheet.Rows.Count, "B").End(xlUp).Row
+                For k = 2 To LastRowBC
+                    For g = 2 To LastRowEngView
+                        If BC.Cells(k, "E").Value = EngViewSheet.Cells(g, "B").Value Then
+                            BC.Cells(k, j + 1).Value = EngViewSheet.Cells(g, "B").Value ' VLEID ENG
+                            BC.Cells(k, j + 2).Value = EngViewSheet.Cells(g, "C").Value ' VLPN ENG
+                            BC.Cells(k, j + 3).Value = EngViewSheet.Cells(g, "L").Value ' VLQTY ENG
+                        
+                            If BC.Cells(k, "E").Value = BC.Cells(k, j + 1).Value Then
+                                BC.Cells(k, j + 4).Value = "Same EID"
+                            Else
+                                BC.Cells(k, j + 4).Value = "Different EID"
+                            End If
+                            If BC.Cells(k, "C").Value = BC.Cells(k, j + 2).Value Then
+                                BC.Cells(k, j + 5).Value = "Same PN"
+                            Else
+                                BC.Cells(k, j + 5).Value = "Different PN"
+                            End If
+                            If BC.Cells(k, "F").Value = BC.Cells(k, j + 3).Value Then
+                                BC.Cells(k, j + 6).Value = "Same QTY"
+                            Else
+                                BC.Cells(k, j + 6).Value = "Different QTY"
+                            End If
+                            
+                            Exit For
+                        End If
+                        
+                       
+                    Next g
+                Next k
+                
+                'Function View
+                Set FuncViewSheet = SelectedWorkbook.Sheets("FUNCTION VIEW")
+                LastRowFuncView = FuncViewSheet.Cells(FuncViewSheet.Rows.Count, "A").End(xlUp).Row
+                For k = 2 To LastRowBC
+                    For g = 2 To LastRowFuncView
+                    
+                        If BC.Cells(k, "E").Value = FuncViewSheet.Cells(g, "A").Value Then
+                            BC.Cells(k, j + 9).Value = FuncViewSheet.Cells(g, "A").Value ' VLEID FUNCTION
+                            BC.Cells(k, j + 10).Value = FuncViewSheet.Cells(g, "C").Value ' VLPN FUNCTION
+                            BC.Cells(k, j + 11).Value = FuncViewSheet.Cells(g, "L").Value ' VLQTY FUNCTION
+                            
+                            If BC.Cells(k, "E").Value = BC.Cells(k, j + 9).Value Then
+                                BC.Cells(k, j + 12).Value = "Same EID"
+                            Else
+                                BC.Cells(k, j + 12).Value = "Different EID"
+                            End If
+                            If BC.Cells(k, "C").Value = BC.Cells(k, j + 10).Value Then
+                                BC.Cells(k, j + 13).Value = "Same PN"
+                            Else
+                                BC.Cells(k, j + 13).Value = "Different PN"
+                            End If
+                            If BC.Cells(k, "F").Value = BC.Cells(k, j + 11).Value Then
+                                BC.Cells(k, j + 14).Value = "Same QTY"
+                            Else
+                                BC.Cells(k, j + 14).Value = "Different QTY"
+                            End If
+                            
+                            Exit For
+                        
+                        End If
+                        
+                    
+        
+                    Next g
+                Next k
+                
+                'Configuration View
+                Set ConfigViewSheet = SelectedWorkbook.Sheets("CONF VIEW")
+                LastRowConfigView = ConfigViewSheet.Cells(ConfigViewSheet.Rows.Count, "B").End(xlUp).Row
+                For k = 2 To LastRowBC
+                    For g = 2 To LastRowConfigView
+                    
+                        If BC.Cells(k, "E").Value = ConfigViewSheet.Cells(g, "B").Value Then
+                            BC.Cells(k, j + 17).Value = ConfigViewSheet.Cells(g, "B").Value ' VLEID FUNCTION
+                            BC.Cells(k, j + 18).Value = ConfigViewSheet.Cells(g, "C").Value ' VLPN FUNCTION
+                            BC.Cells(k, j + 19).Value = ConfigViewSheet.Cells(g, "N").Value ' VLQTY FUNCTION
+                            
+                            If BC.Cells(k, "E").Value = BC.Cells(k, j + 17).Value Then
+                                BC.Cells(k, j + 20).Value = "Same EID"
+                            Else
+                                BC.Cells(k, j + 20).Value = "Different EID"
+                            End If
+                            If BC.Cells(k, "C").Value = BC.Cells(k, j + 18).Value Then
+                                BC.Cells(k, j + 21).Value = "Same PN"
+                            Else
+                                BC.Cells(k, j + 21).Value = "Different PN"
+                            End If
+                            If BC.Cells(k, "F").Value = BC.Cells(k, j + 19).Value Then
+                                BC.Cells(k, j + 22).Value = "Same QTY"
+                            Else
+                                BC.Cells(k, j + 22).Value = "Different QTY"
+                            End If
+                            
+                            Exit For
+                        
+                        End If
+                        
+                       
+                        
+                        
+                    Next g
+                Next k
+                
+            End If
+        Next j
+        
+        
+    
+        
+        ' Close file i
+        SelectedWorkbook.Close SaveChanges:=False
+        
+        
+        
+    Next i
+    
+    
+    MsgBox "BOM Comparisons completed"
+    
+    
 
-                // Add more logic here or interact with the project as needed
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
-        }
-    }
-}
+End Sub
+
+
+' This module stores the plant process
+
+
+Sub PlantColumnsCreation()
+    
+    Dim ws As Worksheet
+    
+    Dim i As Long
+    Dim j As Long
+    Dim DataManagement As Worksheet
+    Dim PlantNum As Integer
+    Dim StartingPoint As Integer
+    
+    Set DataManagement = ThisWorkbook.Sheets("DataManagement")
+    
+    PlantNum = DataManagement.Cells(1, "F").Value
+    UnitNum = DataManagement.Cells(1, "C").Value
+    
+    Dim Traceback As Integer
+
+    Set ws = ThisWorkbook.Sheets("BOM CONSTRUCTION")
+    
+    LastColumn = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' Fix this parameter
+    ResetStart = LastColumn + 2
+    StartingPoint = LastColumn + 2
+    
+    For i = 1 To UnitNum ' Number of times: given by the number of units
+        
+        'MsgBox "Done I"
+        
+        For j = 1 To PlantNum ' the las number is given by the number of plants
+        
+            
+            ws.Cells(1, StartingPoint).Value = "COMPARE TO PMX. UNIT" & i & ". Plant: " & j
+            
+            ws.Cells(1, StartingPoint + 1).Value = "VL EID"
+            ws.Cells(1, StartingPoint + 2).Value = "VL PN"
+            ws.Cells(1, StartingPoint + 3).Value = "VL QTY"
+            ws.Cells(1, StartingPoint + 4).Value = "SAME EID ?"
+            ws.Cells(1, StartingPoint + 5).Value = "SAME PN ?"
+            ws.Cells(1, StartingPoint + 6).Value = "SAME QTY ?"
+            ws.Columns(StartingPoint + 7).Interior.Color = RGB(0, 0, 0)
+            StartingPoint = StartingPoint + 8
+            Traceback = Traceback + 8
+            'MsgBox "Done"
+        
+        Next j
+       
+    Next i
+    
+    
+End Sub
+
+
+'This part does the BOM comparison
+Sub Step_7_PLANT_COMPARISON()
+
+    Dim DataManagement As Worksheet ' The source of information
+    Dim BC As Worksheet
+    Set DataManagement = ThisWorkbook.Sheets("DataManagement")
+    Set BC = ThisWorkbook.Sheets("BOM CONSTRUCTION")
+    LastRowEID = BC.Cells(BC.Rows.Count, "E").End(xlUp).Row
+    
+    Dim EID() As String
+    ReDim EID(1 To LastRowEID - 1)
+    
+    Dim UnitNum As Integer
+    UnitNum = DataManagement.Cells(1, "C").Value
+    Dim UnitNames() As String
+    ReDim UnitNames(1 To UnitNum)
+    Dim PlantNum As Integer
+    PlantNum = DataManagement.Cells(1, "F").Value ' Stores the number of plants
+    Dim PlantNames() As String
+    ReDim PlantNames(1 To PlantNum)
+    
+    Dim i As Long
+    Dim j As Long
+    Dim k As Long
+    Dim z As Long
+    
+    Dim StartColumn As Integer
+    StartColumn = 44
+    
+    Dim NewStartColumn As Integer
+    
+    ' This loop searches for the right column to start the PLANT comparison process
+    For i = StartColumn To BC.Cells(1, BC.Columns.Count).End(xlToLeft).Column
+        If BC.Cells(1, i).Value = "COMPARE TO PMX. UNIT1. Plant: 1" Then
+            'MsgBox "FOUND ON: " & i
+            NewStartColumn = i
+            Exit For
+        End If
+    Next i
+    
+    ' This loop stores the names of the plants into an array
+    For i = 1 To UBound(PlantNames)
+        PlantNames(i) = DataManagement.Cells(2 + i, "F").Value
+    Next i
+    
+    ' This loop stores the directions of the units into an array
+    For i = 1 To UnitNum
+        UnitNames(i) = DataManagement.Cells(9 + i, "F").Value
+    Next i
+    
+    
+    ' This loop stores the EID column values
+    For i = 1 To LastRowEID - 1
+        EID(i) = BC.Cells(i + 1, "E").Value
+    Next i
+    
+    
+    Dim SelectedWorkbook As Workbook
+    Dim PlantSheet As Worksheet
+    
+    
+    
+    For i = 1 To UnitNum
+        ' Open the PlantFile
+        Set SelectedWorkbook = Workbooks.Open(UnitNames(i))
+        For j = 1 To PlantNum
+            BC.Cells(1, NewStartColumn).Value = BC.Cells(1, NewStartColumn).Value & " " & PlantNames(j)
+            ' Set the sheet to work
+            Set PlantSheet = SelectedWorkbook.Sheets(PlantNames(j))
+            'MsgBox "Plant Name: " & PlantNames(j)
+            LastRowOpenedBook = PlantSheet.Cells(PlantSheet.Rows.Count, "B").End(xlUp).Row
+            For k = 1 To UBound(EID)
+                For z = 1 To LastRowOpenedBook
+                    If EID(k) = PlantSheet.Cells(z, "B").Value Then
+                        'MsgBox "True"
+                        'BC.Cells(k + 1, NewStartColumn).Value = i
+                        BC.Cells(k + 1, NewStartColumn + 1).Value = PlantSheet.Cells(z, "B").Value
+                        BC.Cells(k + 1, NewStartColumn + 2).Value = PlantSheet.Cells(z, "C").Value
+                        BC.Cells(k + 1, NewStartColumn + 3).Value = PlantSheet.Cells(z, "E").Value
+                        
+                        
+                        If BC.Cells(k + 1, "E") = BC.Cells(k + 1, NewStartColumn + 1).Value Then
+                            BC.Cells(k + 1, NewStartColumn + 4).Value = "Same EID"
+                        End If
+                        
+                        If BC.Cells(k + 1, "C") = BC.Cells(k + 1, NewStartColumn + 2).Value Then
+                            BC.Cells(k + 1, NewStartColumn + 5).Value = "Same PN"
+                        Else
+                            BC.Cells(k + 1, NewStartColumn + 5).Value = "Different PN"
+                        End If
+                        
+                        If BC.Cells(k + 1, "F") = BC.Cells(k + 1, NewStartColumn + 3).Value Then
+                            BC.Cells(k + 1, NewStartColumn + 6).Value = "Same QTY"
+                        Else
+                            BC.Cells(k + 1, NewStartColumn + 6).Value = "Different QTY"
+                        End If
+                        
+                    Else
+                        'BC.Cells(k + 1, NewStartColumn + 1).Value = "No match"
+                    End If
+                Next z
+            Next k
+            NewStartColumn = NewStartColumn + 8
+    
+        Next j
+        SelectedWorkbook.Close SaveChanges:=False
+    Next i
+    
+    
+    
+    
+    MsgBox "Plant Comparison completed"
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+End Sub
+
+
+' This module contains the code related to the Clean process
+
+Sub CleanFrame()
+    
+    Dim DataManagement As Worksheet
+    Dim BC As Worksheet
+    
+    Set DataManagement = ThisWorkbook.Sheets("DataManagement")
+    Set BC = ThisWorkbook.Sheets("BOM CONSTRUCTION")
+    
+    
+    ' Clears the content of all the frame
+    BC.Range("A2:AAA1000").ClearContents
+    BC.Range("AR1:AAA1").ClearContents ' Clears the dinamic headders for Units and Plants
+    BC.Range("AR1:AAA1000").Interior.Color = xlNone
+    BC.Columns("K").Interior.Color = xlNone
+    
+    
+    
+    
+    ' Clear the values stored in the DataManagement sheet
+    DataManagement.Range("A1:B16").ClearContents
+    DataManagement.Cells(1, "C").ClearContents ' Clears the number of units
+    
+    DataManagement.Range("F1:F20").ClearContents ' Clears the values related to plants
+    
+    DataManagement.Range("K1:K20").ClearContents ' Clears the values related to EBOM and Clones
+    
+    MsgBox "Frame cleared", vbInformation, "Quality Macro"
+    
+End Sub
+
+
+' This module calls the full macro
+
+Sub QualityMacro()
+    'Unload Me
+    UserForm2.Show
+End Sub
