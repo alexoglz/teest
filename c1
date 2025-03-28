@@ -1,3 +1,4 @@
+Module 1:
 ' This module pastes the values under the headers
 
 
@@ -203,10 +204,12 @@ Sub Step_3_AToG()
 
 End Sub
 
+Module 2:
 Sub FullMacro()
     UserForm1.Show
 End Sub
 
+Module 3:
 ' This module contains all the filters process
 
 ' 1.COMPARE TO EBOM-IN WORK [UPDATED] [PENDING TO ADD PHASE STATUS PROCESS]
@@ -453,7 +456,7 @@ Sub Step_6_Compare_To_ENG_VIEW_PLANNING()
 End Sub
 
 
-
+Module 4:
 ' This module stores the UNIT BOM process
 
 Sub ColumnsCreation(ColNum As Integer)
@@ -674,7 +677,7 @@ Sub Step_6_BOM_COMPARISON()
 
 End Sub
 
-
+Module 5:
 ' This module stores the plant process
 
 
@@ -853,7 +856,7 @@ Sub Step_7_PLANT_COMPARISON()
     
 End Sub
 
-
+Module 6:
 ' This module contains the code related to the Clean process
 
 Sub CleanFrame()
@@ -886,7 +889,7 @@ Sub CleanFrame()
     
 End Sub
 
-
+Module 7:
 ' This module calls the full macro
 
 Sub QualityMacro()
