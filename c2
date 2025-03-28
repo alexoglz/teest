@@ -1,0 +1,103 @@
+Sub PBOMCheck()
+    Dim selectedFile As String
+    Dim wbPBOM As Workbook
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    
+    Dim displayName As String, eid As String
+    Dim statusK As String, phaseG As String, phaseP As String
+    Dim finalApproval As String, level As Variant
+    Dim errores As Integer: errores = 0
+    
+    ' 1️⃣ Seleccionar archivo PBOM
+    With Application.FileDialog(msoFileDialogFilePicker)
+        .Title = "Select PBOM File"
+        .Filters.Add "Excel Files", "*.xls; *.xlsx; *.xlsm", 1
+        If .Show <> -1 Then Exit Sub ' Si el usuario cancela
+        selectedFile = .SelectedItems(1)
+    End With
+
+    ' 2️⃣ Abrir archivo PBOM (solo lectura)
+    Set wbPBOM = Workbooks.Open(selectedFile, ReadOnly:=True)
+    Set ws = wbPBOM.Sheets(1) ' Asume que solo hay una hoja
+
+    Application.ScreenUpdating = False
+    
+    ' 3️⃣ Encontrar la última fila con datos (en columna A)
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+    ' 4️⃣ Loop desde la fila 5
+    For i = 5 To lastRow
+        ' Validación 1: Final CM Approval (col Y) = "Accepted" (excepto Level 1)
+        level = ws.Cells(i, "A").Value
+        finalApproval = Trim(ws.Cells(i, "Y").Value)
+        If level <> 1 And finalApproval <> "Accepted" Then
+            ws.Cells(i, "Y").Interior.Color = RGB(255, 199, 206)
+            ws.Cells(i, "AR").Value = "CM Approval ≠ Accepted"
+            errores = errores + 1
+        Else
+            ws.Cells(i, "Y").Interior.ColorIndex = xlNone
+            ws.Cells(i, "AR").ClearContents
+        End If
+
+        ' Validación 2: Display Name (B) vs EID (AQ) → AU
+        displayName = Trim(ws.Cells(i, "B").Value)
+        eid = Trim(ws.Cells(i, "AQ").Value)
+        If displayName = eid Then
+            ws.Cells(i, "AU").Value = eid
+            ws.Cells(i, "AU").Interior.Color = RGB(198, 239, 206)
+        Else
+            ws.Cells(i, "AU").Value = ""
+            ws.Cells(i, "AU").Interior.Color = RGB(255, 199, 206)
+        End If
+
+        ' Validación 3: Header / MLI → AV
+        statusK = Trim(ws.Cells(i, "K").Value)
+        Select Case statusK
+            Case "CM Remove Level"
+                ws.Cells(i, "AV").Value = "Header"
+                ws.Cells(i, "AV").Interior.Color = RGB(221, 235, 247)
+            Case "Accepted", "Replace", "Out of Scope"
+                ws.Cells(i, "AV").Value = "MLI"
+                ws.Cells(i, "AV").Interior.Color = RGB(198, 239, 206)
+            Case Else
+                ws.Cells(i, "AV").Value = "Mismatch"
+                ws.Cells(i, "AV").Interior.Color = RGB(255, 199, 206)
+        End Select
+
+        ' Validación 4: DR / SCH / Out of Scope → AW
+        phaseG = Trim(ws.Cells(i, "G").Value)
+        phaseP = Trim(ws.Cells(i, "P").Value)
+        Select Case True
+            Case statusK = "Accepted" And phaseG = "Production"
+                ws.Cells(i, "AW").Value = "DR"
+                ws.Cells(i, "AW").Interior.ColorIndex = xlNone
+            Case statusK = "Replace" And phaseP = "Production"
+                ws.Cells(i, "AW").Value = "DR"
+                ws.Cells(i, "AW").Interior.ColorIndex = xlNone
+            Case statusK = "Replace" And phaseP = "Development"
+                ws.Cells(i, "AW").Value = "SCH"
+                ws.Cells(i, "AW").Interior.ColorIndex = xlNone
+            Case statusK = "Out of Scope"
+                ws.Cells(i, "AW").Value = "Out of Scope"
+                ws.Cells(i, "AW").Interior.ColorIndex = xlNone
+            Case Else
+                ws.Cells(i, "AW").Value = "Mismatch"
+                ws.Cells(i, "AW").Interior.Color = RGB(255, 199, 206)
+        End Select
+    Next i
+
+    Application.ScreenUpdating = True
+
+    ' Mensaje final
+    If errores > 0 Then
+        MsgBox errores & " filas tienen Final CM Approval diferente a 'Accepted'", vbExclamation, "PBOM Check"
+    Else
+        MsgBox "PBOM Check completado sin errores de aprobación", vbInformation, "PBOM Check"
+    End If
+
+    ' Opcional: dejar el archivo abierto o cerrarlo
+    ' wbPBOM.Close SaveChanges:=False
+
+End Sub
