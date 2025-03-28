@@ -27,8 +27,8 @@ Sub PBOMCheck()
     ' 3️⃣ Encontrar la última fila con datos (en columna A)
     lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
 
-    ' 4️⃣ Loop desde la fila 5
-    For i = 5 To lastRow
+    ' 4️⃣ Loop desde la fila 6
+    For i = 6 To lastRow
         ' Validación 1: Final CM Approval (col Y) = "Accepted" (excepto Level 1)
         level = ws.Cells(i, "A").Value
         finalApproval = Trim(ws.Cells(i, "Y").Value)
@@ -66,9 +66,10 @@ Sub PBOMCheck()
                 ws.Cells(i, "AV").Interior.Color = RGB(255, 199, 206)
         End Select
 
-        ' Validación 4: DR / SCH / Out of Scope → AW
+        ' Validación 4: Clasificación DR / SCH / Out of Scope / Header → AW
         phaseG = Trim(ws.Cells(i, "G").Value)
         phaseP = Trim(ws.Cells(i, "P").Value)
+
         Select Case True
             Case statusK = "Accepted" And phaseG = "Production"
                 ws.Cells(i, "AW").Value = "DR"
@@ -82,6 +83,9 @@ Sub PBOMCheck()
             Case statusK = "Out of Scope"
                 ws.Cells(i, "AW").Value = "Out of Scope"
                 ws.Cells(i, "AW").Interior.ColorIndex = xlNone
+            Case statusK = "CM Remove Level"
+                ws.Cells(i, "AW").Value = "Header"
+                ws.Cells(i, "AW").Interior.Color = RGB(221, 235, 247)
             Case Else
                 ws.Cells(i, "AW").Value = "Mismatch"
                 ws.Cells(i, "AW").Interior.Color = RGB(255, 199, 206)
