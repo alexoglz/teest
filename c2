@@ -20,10 +20,64 @@ Sub PBOMCheck()
     End With
 
     ' Open the selected PBOM file (read-only)
-    Set wbPBOM = Workbooks.Open(selectedFile, ReadOnly:=True)
-    Set ws = wbPBOM.Sheets(1) ' Assumes PBOM has only one sheet
+    Set wbPBOM = Workbooks.Open(selectedFile)
+    Set ws = wbPBOM.Sheets(1)
 
     Application.ScreenUpdating = False
+
+    ' Apply formatting before processing
+    With ws
+        ' Set background colors
+        .Rows(4).Interior.Color = RGB(200, 200, 200) ' Medium gray
+        .Rows(5).Interior.Color = RGB(0, 112, 192) ' Darker blue
+        .Rows(5).Font.Color = RGB(255, 255, 255) ' White font
+
+        ' Set yellow highlights
+        .Range("B4,K4,P4,Q4,R4,W4,X4,Y4,Z4").Interior.Color = RGB(255, 255, 0)
+
+        ' Merge and label headers for PBOM Check
+        .Range("AT3:AX3").Merge
+        .Range("AT3").Value = "PBOM Check"
+        .Range("AT4").Value = "CM ACTION - Marelyn Notes"
+        .Range("AU4").Value = "Display Name = EID"
+        .Range("AV4").Value = "Header/MLI"
+        .Range("AW4").Value = "DR/SCH/REMOVE"
+        .Range("AX4").Value = "Piping"
+
+        ' Set filter on row 4
+        .Rows(4).AutoFilter
+
+        ' Adjust column widths (auto fit)
+        Dim colList As Variant
+        colList = Array("B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "U", _
+                        "Y", "Z", "AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AI", "AJ", "AK", "AL", "AM", "AN", _
+                        "AO", "AP", "AQ", "AR", "AT", "AU", "AV", "AW", "AX")
+        Dim col As Variant
+        For Each col In colList
+            .Columns(col).AutoFit
+        Next col
+
+        ' Set specific widths for larger columns
+        .Columns("T").ColumnWidth = 50
+        .Columns("V").ColumnWidth = 50
+        .Columns("W").ColumnWidth = 50
+        .Columns("X").ColumnWidth = 50
+        .Columns("AT").ColumnWidth = 70
+
+        ' Add black separator columns
+        .Columns("AS").ColumnWidth = 2
+        .Columns("AS").Interior.Color = RGB(0, 0, 0)
+        .Columns("AY").ColumnWidth = 2
+        .Columns("AY").Interior.Color = RGB(0, 0, 0)
+
+        ' Adjust row heights automatically
+        .Rows.AutoFit
+
+        ' Freeze first two columns
+        .Activate
+        .Range("C6").Select
+        ActiveWindow.FreezePanes = True
+    End With
 
     ' Get last row based on column A
     lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
@@ -34,7 +88,7 @@ Sub PBOMCheck()
         level = ws.Cells(i, "A").Value
         finalApproval = Trim(ws.Cells(i, "Y").Value)
         If level <> 1 And finalApproval <> "Accepted" Then
-            ws.Cells(i, "Y").Interior.Color = RGB(255, 199, 206)
+            ws.Cells(i, "Y").Interior.Color = RGB(255, 199, 206) ' Red fill
             ws.Cells(i, "AR").Value = "CM Approval ≠ Accepted"
             errores = errores + 1
         Else
@@ -47,10 +101,10 @@ Sub PBOMCheck()
         eid = Trim(ws.Cells(i, "AQ").Value)
         If displayName = eid Then
             ws.Cells(i, "AU").Value = eid
-            ws.Cells(i, "AU").Interior.Color = RGB(198, 239, 206)
+            ws.Cells(i, "AU").Interior.Color = RGB(198, 239, 206) ' Green fill
         Else
             ws.Cells(i, "AU").Value = "Mismatch"
-            ws.Cells(i, "AU").Interior.Color = RGB(255, 199, 206)
+            ws.Cells(i, "AU").Interior.Color = RGB(255, 199, 206) ' Red fill
         End If
 
         ' 3. Classify Header / MLI in column AV
@@ -58,18 +112,19 @@ Sub PBOMCheck()
         Select Case statusK
             Case "CM Remove Level"
                 ws.Cells(i, "AV").Value = "Header"
-                ws.Rows(i).Interior.Color = RGB(221, 235, 247)
+                ws.Rows(i).Interior.Color = RGB(221, 235, 247) ' Entire row light blue
             Case "Accepted", "Replace", "Out of Scope"
                 ws.Cells(i, "AV").Value = "MLI"
-                ws.Cells(i, "AV").Interior.Color = RGB(198, 239, 206)
+                ws.Cells(i, "AV").Interior.Color = RGB(198, 239, 206) ' Green
             Case Else
                 ws.Cells(i, "AV").Value = "Mismatch"
-                ws.Cells(i, "AV").Interior.Color = RGB(255, 199, 206)
+                ws.Cells(i, "AV").Interior.Color = RGB(255, 199, 206) ' Red
         End Select
 
         ' 4. Classify DR / SCH / Header / Out of Scope in column AW
         phaseG = Trim(ws.Cells(i, "G").Value)
         phaseP = Trim(ws.Cells(i, "P").Value)
+
         Select Case True
             Case statusK = "Accepted" And phaseG = "Production"
                 ws.Cells(i, "AW").Value = "DR"
@@ -92,83 +147,12 @@ Sub PBOMCheck()
         End Select
     Next i
 
-    ' === FORMATTING ===
-    With ws
-        ' Freeze columns A and B
-        .Activate
-        ActiveWindow.FreezePanes = False
-        .Range("C6").Select
-        ActiveWindow.FreezePanes = True
-
-        ' Row 5: Darker blue + white text
-        With .Rows(5)
-            .Interior.Color = RGB(0, 84, 153)
-            .Font.Color = RGB(255, 255, 255)
-            .Font.Bold = True
-        End With
-
-        ' Row 4: Medium gray background
-        With .Rows(4)
-            .Interior.Color = RGB(180, 180, 180)
-            .Font.Color = RGB(0, 0, 0)
-            .Font.Bold = False
-        End With
-
-        ' Yellow highlighted cells in row 4
-        .Range("B4,K4,P4,Q4,R4,W4,X4,Y4,Z4").Interior.Color = RGB(255, 255, 0)
-
-        ' Header labels in row 4
-        .Range("AT4").Value = "CM ACTION - Marelyn Notes"
-        .Range("AU4").Value = "Display Name = EID"
-        .Range("AV4").Value = "Header/MLI"
-        .Range("AW4").Value = "DR/SCH/REMOVE"
-        .Range("AX4").Value = "Piping"
-
-        ' Merged section renamed: PBOM Check
-        .Range("AT3:AX3").Merge
-        .Range("AT3").Value = "PBOM Check"
-        .Range("AT3").HorizontalAlignment = xlCenter
-        .Range("AT3").Font.Bold = True
-
-        ' Enable AutoFilter for row 4
-        .Rows("4:4").AutoFilter
-
-        ' AutoFit columns
-        .Columns("B:C").AutoFit
-        .Columns("D:E").AutoFit
-        .Columns("F:H").AutoFit
-        .Columns("I:J").AutoFit
-        .Columns("K:N").AutoFit
-        .Columns("O:R").AutoFit
-        .Columns("S:S").AutoFit
-        .Columns("U:U").AutoFit
-        .Columns("Y:AQ").AutoFit
-        .Columns("AR:AR").AutoFit
-        .Columns("AU:AU").AutoFit
-        .Columns("AV:AV").AutoFit
-        .Columns("AW:AW").AutoFit
-        .Columns("AX:AX").AutoFit
-
-        ' Custom widths
-        .Columns("T").ColumnWidth = 50
-        .Columns("V").ColumnWidth = 50
-        .Columns("W").ColumnWidth = 50
-        .Columns("X").ColumnWidth = 50
-        .Columns("AT").ColumnWidth = 70
-
-        ' Black separator columns
-        .Columns("AS").Interior.Color = RGB(0, 0, 0)
-        .Columns("AS").ColumnWidth = 2
-        .Columns("AY").Interior.Color = RGB(0, 0, 0)
-        .Columns("AY").ColumnWidth = 2
-
-        ' AutoFit row height
-        .Rows("6:" & lastRow).EntireRow.AutoFit
-    End With
+    ' Save PBOM after all changes
+    wbPBOM.Save
 
     Application.ScreenUpdating = True
 
-    ' Final message
+    ' Final result message
     If errores > 0 Then
         MsgBox errores & " rows have Final CM Approval different from 'Accepted'", vbExclamation, "PBOM Check"
     Else
