@@ -9,7 +9,7 @@ Sub PBOMCheck()
     Dim statusK As String, phaseG As String, phaseP As String
     Dim finalApproval As String, level As Variant
     Dim errores As Integer: errores = 0
-
+    
     ' Ask user to select the PBOM file
     With Application.FileDialog(msoFileDialogFilePicker)
         .Title = "Select PBOM File"
@@ -20,64 +20,15 @@ Sub PBOMCheck()
     End With
 
     ' Open the selected PBOM file (read-only)
-    Set wbPBOM = Workbooks.Open(selectedFile, ReadOnly:=False)
+    Set wbPBOM = Workbooks.Open(selectedFile, ReadOnly:=True)
     Set ws = wbPBOM.Sheets(1) ' Assumes PBOM has only one sheet
 
     Application.ScreenUpdating = False
-
+    
     ' Get last row based on column A
     lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
 
-    ' === FORMATTING ===
-    With ws
-        ' Freeze columns A and B
-        .Activate
-        ActiveWindow.FreezePanes = False
-        .Range("C6").Select
-        ActiveWindow.FreezePanes = True
-
-        ' Row 5: blue fill with white font
-        With .Range("Y5:AW5")
-            .Interior.Color = RGB(0, 112, 192)
-            .Font.Color = RGB(255, 255, 255)
-            .Font.Bold = True
-        End With
-
-        ' Row 4 headers
-        .Range("AT4").Value = "CM ACTION - Marelyn Notes"
-        .Range("AU4").Value = "Display Name = EID"
-        .Range("AV4").Value = "Header/MLI"
-        .Range("AW4").Value = "DR/SCH/REMOVE"
-        .Range("AX4").Value = "Piping"
-
-        ' Merge and title row 3
-        .Range("AT3:AX3").Merge
-        .Range("AT3").Value = "EBOM"
-        .Range("AT3").HorizontalAlignment = xlCenter
-        .Range("AT3").Font.Bold = True
-
-        ' AutoFit for specific columns
-        .Columns("B:C").AutoFit
-        .Columns("D:E").AutoFit
-        .Columns("F:H").AutoFit
-        .Columns("I:J").AutoFit
-        .Columns("K:N").AutoFit
-        .Columns("O:R").AutoFit
-        .Columns("S:S").AutoFit
-        .Columns("U:U").AutoFit
-        .Columns("Y:AQ").AutoFit
-
-        ' Fixed width for T, V, W, X
-        .Columns("T").ColumnWidth = 50
-        .Columns("V").ColumnWidth = 50
-        .Columns("W").ColumnWidth = 50
-        .Columns("X").ColumnWidth = 50
-
-        ' AutoFit all data row heights
-        .Rows("6:" & lastRow).EntireRow.AutoFit
-    End With
-
-    ' === MAIN CHECK LOOP ===
+    ' Loop through each row starting from row 6
     For i = 6 To lastRow
         ' 1. Validate Final CM Approval (Column Y), skip if Level = 1
         level = ws.Cells(i, "A").Value
@@ -141,6 +92,74 @@ Sub PBOMCheck()
                 ws.Cells(i, "AW").Interior.Color = RGB(255, 199, 206) ' Red
         End Select
     Next i
+
+    ' === FORMATTING ===
+    With ws
+        ' Freeze columns A and B
+        .Activate
+        ActiveWindow.FreezePanes = False
+        .Range("C6").Select
+        ActiveWindow.FreezePanes = True
+
+        ' Row 5: Full blue background, white bold font
+        With .Rows(5)
+            .Interior.Color = RGB(0, 112, 192)
+            .Font.Color = RGB(255, 255, 255)
+            .Font.Bold = True
+        End With
+
+        ' Row 4: Full light gray background
+        With .Rows(4)
+            .Interior.Color = RGB(242, 242, 242)
+            .Font.Color = RGB(0, 0, 0)
+            .Font.Bold = False
+        End With
+
+        ' Header labels on row 4
+        .Range("AT4").Value = "CM ACTION - Marelyn Notes"
+        .Range("AU4").Value = "Display Name = EID"
+        .Range("AV4").Value = "Header/MLI"
+        .Range("AW4").Value = "DR/SCH/REMOVE"
+        .Range("AX4").Value = "Piping"
+
+        ' EBOM label on row 3
+        .Range("AT3:AX3").Merge
+        .Range("AT3").Value = "EBOM"
+        .Range("AT3").HorizontalAlignment = xlCenter
+        .Range("AT3").Font.Bold = True
+
+        ' AutoFit for selected columns
+        .Columns("B:C").AutoFit
+        .Columns("D:E").AutoFit
+        .Columns("F:H").AutoFit
+        .Columns("I:J").AutoFit
+        .Columns("K:N").AutoFit
+        .Columns("O:R").AutoFit
+        .Columns("S:S").AutoFit
+        .Columns("U:U").AutoFit
+        .Columns("Y:AQ").AutoFit
+        .Columns("AR:AR").AutoFit
+        .Columns("AT:AX").AutoFit
+        .Columns("AU:AU").AutoFit
+        .Columns("AV:AV").AutoFit
+        .Columns("AW:AW").AutoFit
+        .Columns("AX:AX").AutoFit
+
+        ' Set fixed width for columns T, V, W, X
+        .Columns("T").ColumnWidth = 50
+        .Columns("V").ColumnWidth = 50
+        .Columns("W").ColumnWidth = 50
+        .Columns("X").ColumnWidth = 50
+
+        ' Format column AS as black separator
+        With .Columns("AS")
+            .Interior.Color = RGB(0, 0, 0)
+            .ColumnWidth = 2
+        End With
+
+        ' AutoFit all data row heights
+        .Rows("6:" & lastRow).EntireRow.AutoFit
+    End With
 
     Application.ScreenUpdating = True
 
