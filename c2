@@ -9,7 +9,7 @@ Sub PBOMCheck()
     Dim statusK As String, phaseG As String, phaseP As String
     Dim finalApproval As String, level As Variant
     Dim errores As Integer: errores = 0
-    
+
     ' Ask user to select the PBOM file
     With Application.FileDialog(msoFileDialogFilePicker)
         .Title = "Select PBOM File"
@@ -20,15 +20,47 @@ Sub PBOMCheck()
     End With
 
     ' Open the selected PBOM file (read-only)
-    Set wbPBOM = Workbooks.Open(selectedFile, ReadOnly:=True)
+    Set wbPBOM = Workbooks.Open(selectedFile, ReadOnly:=False)
     Set ws = wbPBOM.Sheets(1) ' Assumes PBOM has only one sheet
 
     Application.ScreenUpdating = False
-    
+
     ' Get last row based on column A
     lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
 
-    ' Loop through each row starting from row 6
+    ' === FORMATTING ===
+    With ws
+        ' Freeze columns A and B
+        .Activate
+        ActiveWindow.FreezePanes = False
+        .Range("C6").Select
+        ActiveWindow.FreezePanes = True
+
+        ' Row 5: blue fill with white font
+        With .Range("Y5:AW5")
+            .Interior.Color = RGB(0, 112, 192)
+            .Font.Color = RGB(255, 255, 255)
+            .Font.Bold = True
+        End With
+
+        ' Autofit row height
+        .Rows("6:" & lastRow).EntireRow.AutoFit
+
+        ' Add headers to row 4
+        .Range("AT4").Value = "CM ACTION - Marelyn Notes"
+        .Range("AU4").Value = "Display Name = EID"
+        .Range("AV4").Value = "Header/MLI"
+        .Range("AW4").Value = "DR/SCH/REMOVE"
+        .Range("AX4").Value = "Piping"
+
+        ' Merge row 3 headers (AT:AX)
+        .Range("AT3:AX3").Merge
+        .Range("AT3").Value = "EBOM"
+        .Range("AT3").HorizontalAlignment = xlCenter
+        .Range("AT3").Font.Bold = True
+    End With
+
+    ' === MAIN CHECK LOOP ===
     For i = 6 To lastRow
         ' 1. Validate Final CM Approval (Column Y), skip if Level = 1
         level = ws.Cells(i, "A").Value
@@ -101,7 +133,4 @@ Sub PBOMCheck()
     Else
         MsgBox "PBOM Check completed with no approval errors", vbInformation, "PBOM Check"
     End If
-
-    ' Optional: reopen the form if needed
-    ' UserForm2.Show
 End Sub
