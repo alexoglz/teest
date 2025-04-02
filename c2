@@ -115,15 +115,7 @@ Sub PBOMCheck()
         End With
 
         ' Yellow highlighted cells in row 4
-        .Range("B4").Interior.Color = RGB(255, 255, 0)
-        .Range("K4").Interior.Color = RGB(255, 255, 0)
-        .Range("P4").Interior.Color = RGB(255, 255, 0)
-        .Range("Q4").Interior.Color = RGB(255, 255, 0)
-        .Range("R4").Interior.Color = RGB(255, 255, 0)
-        .Range("W4").Interior.Color = RGB(255, 255, 0)
-        .Range("X4").Interior.Color = RGB(255, 255, 0)
-        .Range("Y4").Interior.Color = RGB(255, 255, 0)
-        .Range("Z4").Interior.Color = RGB(255, 255, 0)
+        .Range("B4,K4,P4,Q4,R4,W4,X4,Y4,Z4").Interior.Color = RGB(255, 255, 0)
 
         ' Header labels in row 4
         .Range("AT4").Value = "CM ACTION - Marelyn Notes"
@@ -132,9 +124,9 @@ Sub PBOMCheck()
         .Range("AW4").Value = "DR/SCH/REMOVE"
         .Range("AX4").Value = "Piping"
 
-        ' EBOM merged header
+        ' Merged section renamed: PBOM Check
         .Range("AT3:AX3").Merge
-        .Range("AT3").Value = "EBOM"
+        .Range("AT3").Value = "PBOM Check"
         .Range("AT3").HorizontalAlignment = xlCenter
         .Range("AT3").Font.Bold = True
 
@@ -152,19 +144,19 @@ Sub PBOMCheck()
         .Columns("U:U").AutoFit
         .Columns("Y:AQ").AutoFit
         .Columns("AR:AR").AutoFit
-        .Columns("AT:AX").AutoFit
         .Columns("AU:AU").AutoFit
         .Columns("AV:AV").AutoFit
         .Columns("AW:AW").AutoFit
         .Columns("AX:AX").AutoFit
 
-        ' Fixed width columns
+        ' Custom widths
         .Columns("T").ColumnWidth = 50
         .Columns("V").ColumnWidth = 50
         .Columns("W").ColumnWidth = 50
         .Columns("X").ColumnWidth = 50
+        .Columns("AT").ColumnWidth = 70
 
-        ' Black vertical bars
+        ' Black separator columns
         .Columns("AS").Interior.Color = RGB(0, 0, 0)
         .Columns("AS").ColumnWidth = 2
         .Columns("AY").Interior.Color = RGB(0, 0, 0)
