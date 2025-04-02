@@ -43,21 +43,38 @@ Sub PBOMCheck()
             .Font.Bold = True
         End With
 
-        ' Autofit row height
-        .Rows("6:" & lastRow).EntireRow.AutoFit
-
-        ' Add headers to row 4
+        ' Row 4 headers
         .Range("AT4").Value = "CM ACTION - Marelyn Notes"
         .Range("AU4").Value = "Display Name = EID"
         .Range("AV4").Value = "Header/MLI"
         .Range("AW4").Value = "DR/SCH/REMOVE"
         .Range("AX4").Value = "Piping"
 
-        ' Merge row 3 headers (AT:AX)
+        ' Merge and title row 3
         .Range("AT3:AX3").Merge
         .Range("AT3").Value = "EBOM"
         .Range("AT3").HorizontalAlignment = xlCenter
         .Range("AT3").Font.Bold = True
+
+        ' AutoFit for specific columns
+        .Columns("B:C").AutoFit
+        .Columns("D:E").AutoFit
+        .Columns("F:H").AutoFit
+        .Columns("I:J").AutoFit
+        .Columns("K:N").AutoFit
+        .Columns("O:R").AutoFit
+        .Columns("S:S").AutoFit
+        .Columns("U:U").AutoFit
+        .Columns("Y:AQ").AutoFit
+
+        ' Fixed width for T, V, W, X
+        .Columns("T").ColumnWidth = 50
+        .Columns("V").ColumnWidth = 50
+        .Columns("W").ColumnWidth = 50
+        .Columns("X").ColumnWidth = 50
+
+        ' AutoFit all data row heights
+        .Rows("6:" & lastRow).EntireRow.AutoFit
     End With
 
     ' === MAIN CHECK LOOP ===
