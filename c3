@@ -2,13 +2,12 @@
 ' and validates EID, Part Number, Phase, Quantity, and Status.
 
 Sub ComparePBOMtoEBOM()
-    Dim selectedFile As String
-    Dim wbEBOM As Workbook
-    Dim wsEBOM As Worksheet
-    Dim wsPBOM As Worksheet
+    Dim selectedPBOM As String
+    Dim selectedEBOM As String
+    Dim wbPBOM As Workbook, wbEBOM As Workbook
+    Dim wsPBOM As Worksheet, wsEBOM As Worksheet
     Dim lastRowPBOM As Long, lastRowEBOM As Long
     Dim i As Long, j As Long
-    Dim matchRow As Long
     Dim foundMatch As Boolean
 
     Dim pbomEID As String, ebomEID As String
@@ -17,18 +16,27 @@ Sub ComparePBOMtoEBOM()
     Dim pbomQty As Variant, pbomProposedQty As Variant, ebomQty As Variant
     Dim pbomStatus As String, pbomProposedStatus As String, ebomStatus As String
 
+    ' Ask user to select PBOM file
+    With Application.FileDialog(msoFileDialogFilePicker)
+        .Title = "Select PBOM File"
+        .Filters.Add "Excel Files", "*.xls; *.xlsx; *.xlsm", 1
+        If .Show <> -1 Then Exit Sub
+        selectedPBOM = .SelectedItems(1)
+        UserForm2.Hide
+    End With
+
     ' Ask user to select EBOM file
     With Application.FileDialog(msoFileDialogFilePicker)
         .Title = "Select EBOM File"
         .Filters.Add "Excel Files", "*.xls; *.xlsx; *.xlsm", 1
         If .Show <> -1 Then Exit Sub
-        selectedFile = .SelectedItems(1)
-        UserForm2.Hide
+        selectedEBOM = .SelectedItems(1)
     End With
 
-    Set wbEBOM = Workbooks.Open(selectedFile, ReadOnly:=True)
+    Set wbPBOM = Workbooks.Open(selectedPBOM)
+    Set wsPBOM = wbPBOM.Sheets(1)
+    Set wbEBOM = Workbooks.Open(selectedEBOM, ReadOnly:=True)
     Set wsEBOM = wbEBOM.Sheets(1)
-    Set wsPBOM = ThisWorkbook.Sheets("PBOM Input")
 
     lastRowPBOM = wsPBOM.Cells(wsPBOM.Rows.Count, "B").End(xlUp).Row
     lastRowEBOM = wsEBOM.Cells(wsEBOM.Rows.Count, "B").End(xlUp).Row
@@ -59,8 +67,8 @@ Sub ComparePBOMtoEBOM()
                 wsPBOM.Cells(i, "BF").Interior.ColorIndex = xlNone
 
                 ' BG - Part Number Match
+                ebomPN = Trim(wsEBOM.Cells(j, "C").Value)
                 If pbomStatus = "Replace" Then
-                    ebomPN = Trim(wsEBOM.Cells(j, "C").Value)
                     If pbomProposedPN = ebomPN Then
                         wsPBOM.Cells(i, "BG").Value = pbomProposedPN
                         wsPBOM.Cells(i, "BG").Interior.ColorIndex = xlNone
@@ -69,7 +77,6 @@ Sub ComparePBOMtoEBOM()
                         wsPBOM.Cells(i, "BG").Interior.Color = RGB(255, 199, 206)
                     End If
                 ElseIf pbomStatus = "Accepted" Then
-                    ebomPN = Trim(wsEBOM.Cells(j, "C").Value)
                     If pbomPN = ebomPN Then
                         wsPBOM.Cells(i, "BG").Value = pbomPN
                         wsPBOM.Cells(i, "BG").Interior.ColorIndex = xlNone
@@ -164,4 +171,3 @@ Sub ComparePBOMtoEBOM()
 
     MsgBox "PBOM vs EBOM comparison completed.", vbInformation
 End Sub
-
