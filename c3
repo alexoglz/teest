@@ -43,12 +43,20 @@ Sub ComparePBOMtoEBOM()
 
     Application.ScreenUpdating = False
 
-    ' Add headers to row 4 starting at AZ
-    wsPBOM.Range("AZ4").Value = "EID"
-    wsPBOM.Range("BA4").Value = "PN"
-    wsPBOM.Range("BB4").Value = "PHASE"
-    wsPBOM.Range("BC4").Value = "QTY"
-    wsPBOM.Range("BD4").Value = "STATUS"
+    ' Format EBOM header section
+    With wsPBOM
+        .Range("AZ3:BD3").Merge
+        .Range("AZ3").Value = "EBOM"
+        .Range("AZ3").HorizontalAlignment = xlCenter
+        .Range("AZ4").Value = "EID"
+        .Range("BA4").Value = "PN"
+        .Range("BB4").Value = "PHASE"
+        .Range("BC4").Value = "QTY"
+        .Range("BD4").Value = "STATUS"
+
+        .Columns("AY").ColumnWidth = 2
+        .Columns("AY").Interior.Color = RGB(0, 0, 0)
+    End With
 
     For i = 6 To lastRowPBOM
         pbomEID = Trim(wsPBOM.Cells(i, "B").Value)
@@ -173,8 +181,8 @@ Sub ComparePBOMtoEBOM()
         End If
     Next i
 
-    wbEBOM.Close SaveChanges:=False
     wbPBOM.Save
+    wbEBOM.Close SaveChanges:=False
     Application.ScreenUpdating = True
 
     MsgBox "PBOM vs EBOM comparison completed.", vbInformation
