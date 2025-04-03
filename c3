@@ -16,9 +16,9 @@ Sub ComparePBOMtoEBOM()
     Dim pbomQty As Variant, pbomProposedQty As Variant, ebomQty As Variant
     Dim pbomStatus As String, pbomProposedStatus As String, ebomStatus As String
 
-    ' Ask user to select PBOM file
+    ' Ask user to select formatted PBOM file (result of PBOMCheck)
     With Application.FileDialog(msoFileDialogFilePicker)
-        .Title = "Select PBOM File"
+        .Title = "Select PBOM Result File (from PBOMCheck)"
         .Filters.Add "Excel Files", "*.xls; *.xlsx; *.xlsm", 1
         If .Show <> -1 Then Exit Sub
         selectedPBOM = .SelectedItems(1)
@@ -33,8 +33,10 @@ Sub ComparePBOMtoEBOM()
         selectedEBOM = .SelectedItems(1)
     End With
 
+    ' Open PBOM result file
     Set wbPBOM = Workbooks.Open(selectedPBOM)
     Set wsPBOM = wbPBOM.Sheets(1)
+    ' Open EBOM file as read-only
     Set wbEBOM = Workbooks.Open(selectedEBOM, ReadOnly:=True)
     Set wsEBOM = wbEBOM.Sheets(1)
 
@@ -167,6 +169,8 @@ Sub ComparePBOMtoEBOM()
     Next i
 
     wbEBOM.Close SaveChanges:=False
+    wbPBOM.Save ' Save changes in the PBOM result file
+
     Application.ScreenUpdating = True
 
     MsgBox "PBOM vs EBOM comparison completed.", vbInformation
