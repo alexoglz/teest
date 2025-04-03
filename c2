@@ -31,10 +31,10 @@ Sub PBOMCheck()
         .Rows(4).Interior.Color = RGB(200, 200, 200)
         .Rows(5).Interior.Color = RGB(0, 112, 192)
         .Rows(5).Font.Color = RGB(255, 255, 255)
-        .Range("B4,K4,P4,Q4,R4,W4,X4,Y4,Z4").Interior.Color = RGB(255, 255, 0)
+        .Range("B4,K4,P4,Q4,R4,W4,X4,Y4,Z4,M4,AR4").Interior.Color = RGB(255, 255, 0)
         .Range("AT3:AX3").Merge
         .Range("AT3").Value = "PBOM Check"
-        .Range("AT4").Value = "CM ACTION - Marelyn Notes"
+        .Range("AT4").Value = "CM ACTION - Notes"
         .Range("AU4").Value = "Display Name = EID"
         .Range("AV4").Value = "Header/MLI"
         .Range("AW4").Value = "DR/SCH/REMOVE"
@@ -55,6 +55,7 @@ Sub PBOMCheck()
         .Columns("W").ColumnWidth = 50
         .Columns("X").ColumnWidth = 50
         .Columns("AT").ColumnWidth = 70
+        .Columns("AC").ColumnWidth = 70
         .Columns("AS").ColumnWidth = 2
         .Columns("AS").Interior.Color = RGB(0, 0, 0)
         .Columns("AY").ColumnWidth = 2
