@@ -29,17 +29,21 @@ Sub PBOMCheck()
     ' Apply formatting before processing
     With ws
         ' Header row colors
-        .Rows(4).Interior.Color = RGB(200, 200, 200) ' Gray
-        .Rows(5).Interior.Color = RGB(0, 112, 192)   ' Blue
-        .Rows(5).Font.Color = RGB(255, 255, 255)     ' White font
+        .Rows(4).Interior.Color = RGB(200, 200, 200)
+        .Rows(5).Interior.Color = RGB(0, 112, 192)
+        .Rows(5).Font.Color = RGB(255, 255, 255)
 
         ' Highlight header cells in yellow (including M4 and AR4)
         .Range("B4,K4,M4,P4,Q4,R4,W4,X4,Y4,Z4,AR4").Interior.Color = RGB(255, 255, 0)
 
-        ' Merge EBOM Check section and update header labels
+        ' Merge PBOM Check section and update header labels
         .Range("AT3:AX3").Merge
         .Range("AT3").Value = "PBOM Check"
+        .Range("AT4:AX4").Merge
         .Range("AT4").Value = "CM ACTION - Notes"
+        .Range("AT4").HorizontalAlignment = xlCenter
+        .Range("AT4").Font.Bold = True
+
         .Range("AU4").Value = "Display Name = EID"
         .Range("AV4").Value = "Header/MLI"
         .Range("AW4").Value = "DR/SCH/REMOVE"
@@ -48,7 +52,7 @@ Sub PBOMCheck()
         ' Apply filter to header row
         .Rows(4).AutoFilter
 
-        ' AutoFit certain columns
+        ' AutoFit columns
         Dim colList As Variant
         colList = Array("B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "U", _
                         "Y", "Z", "AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AI", "AJ", "AK", "AL", "AM", "AN", _
@@ -58,7 +62,7 @@ Sub PBOMCheck()
             .Columns(col).AutoFit
         Next col
 
-        ' Set specific widths
+        ' Set specific column widths
         .Columns("T").ColumnWidth = 50
         .Columns("V").ColumnWidth = 50
         .Columns("W").ColumnWidth = 50
@@ -66,7 +70,7 @@ Sub PBOMCheck()
         .Columns("AT").ColumnWidth = 70
         .Columns("AC").ColumnWidth = 70
 
-        ' Black separators
+        ' Add black separators
         .Columns("AS").ColumnWidth = 2
         .Columns("AS").Interior.Color = RGB(0, 0, 0)
         .Columns("AY").ColumnWidth = 2
@@ -75,7 +79,7 @@ Sub PBOMCheck()
         ' Adjust all row heights
         .Rows.AutoFit
 
-        ' Freeze first two columns
+        ' Freeze panes
         .Activate
         .Range("C6").Select
         ActiveWindow.FreezePanes = True
@@ -84,7 +88,7 @@ Sub PBOMCheck()
     ' Get last row based on column A
     lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
 
-    ' Begin row-by-row validation
+    ' Validation logic per row
     For i = 6 To lastRow
         level = ws.Cells(i, "A").Value
         finalApproval = Trim(ws.Cells(i, "Y").Value)
@@ -144,7 +148,7 @@ Sub PBOMCheck()
         End Select
     Next i
 
-    ' Prompt user to save output
+    ' Prompt user to save result
     With Application.FileDialog(msoFileDialogSaveAs)
         .Title = "Save PBOM Check Output"
         .InitialFileName = "PBOM_Check_Result.xlsx"
@@ -161,7 +165,6 @@ Sub PBOMCheck()
 
     Application.ScreenUpdating = True
 
-    ' Summary message
     If errores > 0 Then
         MsgBox errores & " rows have Final CM Approval different from 'Accepted'", vbExclamation, "PBOM Check"
     Else
