@@ -1,5 +1,6 @@
 Sub PBOMCheck()
     Dim selectedFile As String
+    Dim savePath As String
     Dim wbPBOM As Workbook
     Dim ws As Worksheet
     Dim lastRow As Long
@@ -14,12 +15,12 @@ Sub PBOMCheck()
     With Application.FileDialog(msoFileDialogFilePicker)
         .Title = "Select PBOM File"
         .Filters.Add "Excel Files", "*.xls; *.xlsx; *.xlsm", 1
-        If .Show <> -1 Then Exit Sub ' Exit if user cancels
+        If .Show <> -1 Then Exit Sub
         selectedFile = .SelectedItems(1)
-        UserForm2.Hide ' Hide form to avoid blocking Excel after file opens
+        UserForm2.Hide
     End With
 
-    ' Open the selected PBOM file (read-only)
+    ' Open PBOM file
     Set wbPBOM = Workbooks.Open(selectedFile)
     Set ws = wbPBOM.Sheets(1)
 
@@ -27,15 +28,10 @@ Sub PBOMCheck()
 
     ' Apply formatting before processing
     With ws
-        ' Set background colors
-        .Rows(4).Interior.Color = RGB(200, 200, 200) ' Medium gray
-        .Rows(5).Interior.Color = RGB(0, 112, 192) ' Darker blue
-        .Rows(5).Font.Color = RGB(255, 255, 255) ' White font
-
-        ' Set yellow highlights
+        .Rows(4).Interior.Color = RGB(200, 200, 200)
+        .Rows(5).Interior.Color = RGB(0, 112, 192)
+        .Rows(5).Font.Color = RGB(255, 255, 255)
         .Range("B4,K4,P4,Q4,R4,W4,X4,Y4,Z4").Interior.Color = RGB(255, 255, 0)
-
-        ' Merge and label headers for PBOM Check
         .Range("AT3:AX3").Merge
         .Range("AT3").Value = "PBOM Check"
         .Range("AT4").Value = "CM ACTION - Marelyn Notes"
@@ -43,11 +39,8 @@ Sub PBOMCheck()
         .Range("AV4").Value = "Header/MLI"
         .Range("AW4").Value = "DR/SCH/REMOVE"
         .Range("AX4").Value = "Piping"
-
-        ' Set filter on row 4
         .Rows(4).AutoFilter
 
-        ' Adjust column widths (auto fit)
         Dim colList As Variant
         colList = Array("B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "U", _
                         "Y", "Z", "AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AI", "AJ", "AK", "AL", "AM", "AN", _
@@ -57,38 +50,29 @@ Sub PBOMCheck()
             .Columns(col).AutoFit
         Next col
 
-        ' Set specific widths for larger columns
         .Columns("T").ColumnWidth = 50
         .Columns("V").ColumnWidth = 50
         .Columns("W").ColumnWidth = 50
         .Columns("X").ColumnWidth = 50
         .Columns("AT").ColumnWidth = 70
-
-        ' Add black separator columns
         .Columns("AS").ColumnWidth = 2
         .Columns("AS").Interior.Color = RGB(0, 0, 0)
         .Columns("AY").ColumnWidth = 2
         .Columns("AY").Interior.Color = RGB(0, 0, 0)
-
-        ' Adjust row heights automatically
         .Rows.AutoFit
 
-        ' Freeze first two columns
         .Activate
         .Range("C6").Select
         ActiveWindow.FreezePanes = True
     End With
 
-    ' Get last row based on column A
     lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
 
-    ' Loop through each row starting from row 6
     For i = 6 To lastRow
-        ' 1. Validate Final CM Approval (Column Y), skip if Level = 1
         level = ws.Cells(i, "A").Value
         finalApproval = Trim(ws.Cells(i, "Y").Value)
         If level <> 1 And finalApproval <> "Accepted" Then
-            ws.Cells(i, "Y").Interior.Color = RGB(255, 199, 206) ' Red fill
+            ws.Cells(i, "Y").Interior.Color = RGB(255, 199, 206)
             ws.Cells(i, "AR").Value = "CM Approval ≠ Accepted"
             errores = errores + 1
         Else
@@ -96,35 +80,31 @@ Sub PBOMCheck()
             ws.Cells(i, "AR").ClearContents
         End If
 
-        ' 2. Validate Display Name (B) vs EID (AQ) → AU
         displayName = Trim(ws.Cells(i, "B").Value)
         eid = Trim(ws.Cells(i, "AQ").Value)
         If displayName = eid Then
             ws.Cells(i, "AU").Value = eid
-            ws.Cells(i, "AU").Interior.Color = RGB(198, 239, 206) ' Green fill
+            ws.Cells(i, "AU").Interior.Color = RGB(198, 239, 206)
         Else
             ws.Cells(i, "AU").Value = "Mismatch"
-            ws.Cells(i, "AU").Interior.Color = RGB(255, 199, 206) ' Red fill
+            ws.Cells(i, "AU").Interior.Color = RGB(255, 199, 206)
         End If
 
-        ' 3. Classify Header / MLI in column AV
         statusK = Trim(ws.Cells(i, "K").Value)
         Select Case statusK
             Case "CM Remove Level"
                 ws.Cells(i, "AV").Value = "Header"
-                ws.Rows(i).Interior.Color = RGB(221, 235, 247) ' Entire row light blue
+                ws.Rows(i).Interior.Color = RGB(221, 235, 247)
             Case "Accepted", "Replace", "Out of Scope"
                 ws.Cells(i, "AV").Value = "MLI"
-                ws.Cells(i, "AV").Interior.Color = RGB(198, 239, 206) ' Green
+                ws.Cells(i, "AV").Interior.Color = RGB(198, 239, 206)
             Case Else
                 ws.Cells(i, "AV").Value = "Mismatch"
-                ws.Cells(i, "AV").Interior.Color = RGB(255, 199, 206) ' Red
+                ws.Cells(i, "AV").Interior.Color = RGB(255, 199, 206)
         End Select
 
-        ' 4. Classify DR / SCH / Header / Out of Scope in column AW
         phaseG = Trim(ws.Cells(i, "G").Value)
         phaseP = Trim(ws.Cells(i, "P").Value)
-
         Select Case True
             Case statusK = "Accepted" And phaseG = "Production"
                 ws.Cells(i, "AW").Value = "DR"
@@ -147,12 +127,23 @@ Sub PBOMCheck()
         End Select
     Next i
 
-    ' Save PBOM after all changes
-    wbPBOM.Save
+    ' Prompt user to choose where to save the processed PBOM
+    With Application.FileDialog(msoFileDialogSaveAs)
+        .Title = "Save PBOM Check Output"
+        .InitialFileName = "PBOM_Check_Result.xlsx"
+        .FilterIndex = 1
+        If .Show = -1 Then
+            savePath = .SelectedItems(1)
+            Application.DisplayAlerts = False
+            wbPBOM.SaveAs Filename:=savePath
+            Application.DisplayAlerts = True
+        Else
+            MsgBox "Save canceled. No file was saved.", vbExclamation
+        End If
+    End With
 
     Application.ScreenUpdating = True
 
-    ' Final result message
     If errores > 0 Then
         MsgBox errores & " rows have Final CM Approval different from 'Accepted'", vbExclamation, "PBOM Check"
     Else
