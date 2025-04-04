@@ -135,8 +135,11 @@ Sub PBOMCheck()
         End Select
     Next i
 
-    ' Message box to notify user to save the file now
+    ' Message box before saving
     MsgBox "Now save the New Unit Release file with the correct project name.", vbInformation, "Save File"
+
+    ' Convert all formulas to plain text values
+    ws.UsedRange.Value = ws.UsedRange.Value
 
     ' Ask user to save the result file
     With Application.FileDialog(msoFileDialogSaveAs)
