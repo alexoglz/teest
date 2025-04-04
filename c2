@@ -105,9 +105,9 @@ Sub PBOMCheck()
         eid = Trim(ws.Cells(i, "AQ").Value)
         If displayName = eid Then
             ws.Cells(i, "AU").Value = eid
-            ws.Cells(i, "AU").Interior.Color = RGB(198, 239, 206)
+            ws.Cells(i, "AU").Interior.ColorIndex = xlNone
         Else
-            ws.Cells(i, "AU").Value = "Mismatch"
+            ws.Cells(i, "AU").Value = eid
             ws.Cells(i, "AU").Interior.Color = RGB(255, 199, 206)
         End If
 
@@ -117,10 +117,10 @@ Sub PBOMCheck()
                 ws.Cells(i, "AV").Value = "Header"
                 ws.Rows(i).Interior.Color = RGB(221, 235, 247)
             Case "Accepted", "Replace", "Out of Scope"
-                ws.Cells(i, "AV").Value = "MLI"
-                ws.Cells(i, "AV").Interior.Color = RGB(198, 239, 206)
+                ws.Cells(i, "AV").Value = statusK
+                ws.Cells(i, "AV").Interior.ColorIndex = xlNone
             Case Else
-                ws.Cells(i, "AV").Value = "Mismatch"
+                ws.Cells(i, "AV").Value = statusK
                 ws.Cells(i, "AV").Interior.Color = RGB(255, 199, 206)
         End Select
 
@@ -143,7 +143,7 @@ Sub PBOMCheck()
                 ws.Cells(i, "AW").Value = "Header"
                 ws.Cells(i, "AW").Interior.Color = RGB(221, 235, 247)
             Case Else
-                ws.Cells(i, "AW").Value = "Mismatch"
+                ws.Cells(i, "AW").Value = phaseP
                 ws.Cells(i, "AW").Interior.Color = RGB(255, 199, 206)
         End Select
     Next i
