@@ -151,7 +151,7 @@ Sub PBOMCheck()
     ' Ask user to save the result file
     With Application.FileDialog(msoFileDialogSaveAs)
         .Title = "Save PBOM Check Output"
-        .InitialFileName = "PBOM_Check_Result.xlsx"
+        .InitialFileName = "New_Unit_Release.xlsx"
         .FilterIndex = 1
         If .Show = -1 Then
             savePath = .SelectedItems(1)
