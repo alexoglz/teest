@@ -1,176 +1,172 @@
-Sub PBOMCheck()
-    Dim selectedFile As String
-    Dim savePath As String
-    Dim wbPBOM As Workbook
-    Dim ws As Worksheet
-    Dim lastRow As Long
-    Dim i As Long
+Sub ComparePBOMtoEBOM()
+    Dim selectedPBOM As String
+    Dim selectedEBOM As String
+    Dim wbPBOM As Workbook, wbEBOM As Workbook
+    Dim wsPBOM As Worksheet, wsEBOM As Worksheet
+    Dim lastRowPBOM As Long, lastRowEBOM As Long
+    Dim i As Long, j As Long
+    Dim foundMatch As Boolean
 
-    Dim displayName As String, eid As String
-    Dim statusK As String, phaseG As String, phaseP As String
-    Dim finalApproval As String, level As Variant
-    Dim errores As Integer: errores = 0
+    Dim pbomEID As String, ebomEID As String
+    Dim pbomPN As String, pbomProposedPN As String, ebomPN As String
+    Dim pbomPhase As String, pbomProposedPhase As String, ebomPhase As String
+    Dim pbomQty As Variant, pbomProposedQty As Variant, ebomQty As Variant
+    Dim pbomStatus As String, pbomProposedStatus As String, ebomStatus As String
 
-    ' Ask user to select the PBOM file
+    ' Ask user to select the PBOM file (from PBOMCheck)
     With Application.FileDialog(msoFileDialogFilePicker)
-        .Title = "Select PBOM File"
+        .Title = "Select New_Unit_Release File (PBOM Output)"
         .Filters.Add "Excel Files", "*.xls; *.xlsx; *.xlsm", 1
         If .Show <> -1 Then Exit Sub
-        selectedFile = .SelectedItems(1)
+        selectedPBOM = .SelectedItems(1)
         UserForm2.Hide
     End With
 
-    ' Open PBOM file
-    Set wbPBOM = Workbooks.Open(selectedFile)
-    Set ws = wbPBOM.Sheets(1)
+    ' Ask user to select EBOM file
+    With Application.FileDialog(msoFileDialogFilePicker)
+        .Title = "Select EBOM File"
+        .Filters.Add "Excel Files", "*.xls; *.xlsx; *.xlsm", 1
+        If .Show <> -1 Then Exit Sub
+        selectedEBOM = .SelectedItems(1)
+    End With
+
+    Set wbPBOM = Workbooks.Open(selectedPBOM)
+    Set wsPBOM = wbPBOM.Sheets(1)
+    Set wbEBOM = Workbooks.Open(selectedEBOM, ReadOnly:=True)
+    Set wsEBOM = wbEBOM.Sheets(1)
+
+    lastRowPBOM = wsPBOM.Cells(wsPBOM.Rows.Count, "B").End(xlUp).Row
+    lastRowEBOM = wsEBOM.Cells(wsEBOM.Rows.Count, "B").End(xlUp).Row
 
     Application.ScreenUpdating = False
 
-    ' Apply formatting before processing
-    With ws
-        ' Header row colors
-        .Rows(4).Interior.Color = RGB(200, 200, 200)
-        .Rows(5).Interior.Color = RGB(0, 112, 192)
-        .Rows(5).Font.Color = RGB(255, 255, 255)
+    ' EBOM Header setup
+    wsPBOM.Range("AZ3:BD3").Merge
+    With wsPBOM.Range("AZ3")
+        .Value = "EBOM"
+        .HorizontalAlignment = xlCenter
+        .Font.Bold = True
+    End With
+    wsPBOM.Range("AZ4").Value = "EID"
+    wsPBOM.Range("BA4").Value = "PN"
+    wsPBOM.Range("BB4").Value = "PHASE"
+    wsPBOM.Range("BC4").Value = "QTY"
+    wsPBOM.Range("BD4").Value = "STATUS"
 
-        ' Highlight header cells in yellow (including M4 and AR4)
-        .Range("B4,K4,M4,P4,Q4,R4,W4,X4,Y4,Z4,AR4").Interior.Color = RGB(255, 255, 0)
-
-        ' Merge and style PBOM Check section headers
-        .Range("AT3:AX3").Merge
-        .Range("AT3").Value = "PBOM Check"
-        .Range("AT3").HorizontalAlignment = xlCenter
-        .Range("AT3").Font.Bold = True
-
-        .Range("AT4:AX4").Merge
-        .Range("AT4").Value = "CM ACTION - Notes"
-        .Range("AT4").HorizontalAlignment = xlCenter
-        .Range("AT4").Font.Bold = True
-
-        .Range("AU4").Value = "Display Name = EID"
-        .Range("AV4").Value = "Header/MLI"
-        .Range("AW4").Value = "DR/SCH/REMOVE"
-        .Range("AX4").Value = "Piping"
-
-        ' Apply filter to header row
-        .Rows(4).AutoFilter
-
-        ' AutoFit columns
-        Dim colList As Variant
-        colList = Array("B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "U", _
-                        "Y", "Z", "AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AI", "AJ", "AK", "AL", "AM", "AN", _
-                        "AO", "AP", "AQ", "AR", "AT", "AU", "AV", "AW", "AX")
-        Dim col As Variant
-        For Each col In colList
-            .Columns(col).AutoFit
-        Next col
-
-        ' Set specific column widths
-        .Columns("T").ColumnWidth = 50
-        .Columns("V").ColumnWidth = 50
-        .Columns("W").ColumnWidth = 50
-        .Columns("X").ColumnWidth = 50
-        .Columns("AT").ColumnWidth = 70
-        .Columns("AC").ColumnWidth = 70
-
-        ' Add black separators
-        .Columns("AS").ColumnWidth = 2
-        .Columns("AS").Interior.Color = RGB(0, 0, 0)
-        .Columns("AY").ColumnWidth = 2
-        .Columns("AY").Interior.Color = RGB(0, 0, 0)
-
-        ' Adjust all row heights
-        .Rows.AutoFit
-
-        ' Freeze panes
-        .Activate
-        .Range("C6").Select
-        ActiveWindow.FreezePanes = True
+    ' Add black separator at column AY
+    With wsPBOM.Columns("AY")
+        .ColumnWidth = 2
+        .Interior.Color = RGB(0, 0, 0)
     End With
 
-    ' Get last row based on column A
-    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    ' Start comparisons row by row
+    For i = 6 To lastRowPBOM
+        pbomEID = Trim(wsPBOM.Cells(i, "B").Value)
+        pbomPN = Trim(wsPBOM.Cells(i, "D").Value)
+        pbomProposedPN = Trim(wsPBOM.Cells(i, "M").Value)
+        pbomPhase = Trim(wsPBOM.Cells(i, "G").Value)
+        pbomProposedPhase = Trim(wsPBOM.Cells(i, "P").Value)
+        pbomQty = wsPBOM.Cells(i, "H").Value
+        pbomProposedQty = wsPBOM.Cells(i, "Q").Value
+        pbomStatus = Trim(wsPBOM.Cells(i, "K").Value)
+        pbomProposedStatus = Trim(wsPBOM.Cells(i, "O").Value)
 
-    ' Validation logic per row
-    For i = 6 To lastRow
-        level = ws.Cells(i, "A").Value
-        finalApproval = Trim(ws.Cells(i, "Y").Value)
-        If level <> 1 And finalApproval <> "Accepted" Then
-            ws.Cells(i, "Y").Interior.Color = RGB(255, 199, 206)
-            ws.Cells(i, "AR").Value = "CM Approval ≠ Accepted"
-            errores = errores + 1
-        Else
-            ws.Cells(i, "Y").Interior.ColorIndex = xlNone
-            ws.Cells(i, "AR").ClearContents
+        foundMatch = False
+
+        For j = 5 To lastRowEBOM
+            ebomEID = Trim(wsEBOM.Cells(j, "B").Value)
+
+            If pbomEID = ebomEID Then
+                foundMatch = True
+
+                ' AZ - EID Match
+                wsPBOM.Cells(i, "AZ").Value = pbomEID
+
+                ' BA - Part Number Match
+                ebomPN = Trim(wsEBOM.Cells(j, "C").Value)
+                If pbomStatus = "Replace" Then
+                    If pbomProposedPN = ebomPN Then
+                        wsPBOM.Cells(i, "BA").Value = pbomProposedPN
+                    Else
+                        wsPBOM.Cells(i, "BA").Value = "Mismatch"
+                        wsPBOM.Cells(i, "BA").Interior.Color = RGB(255, 199, 206)
+                    End If
+                ElseIf pbomStatus = "Accepted" Then
+                    If pbomPN = ebomPN Then
+                        wsPBOM.Cells(i, "BA").Value = pbomPN
+                    Else
+                        wsPBOM.Cells(i, "BA").Value = "Mismatch"
+                        wsPBOM.Cells(i, "BA").Interior.Color = RGB(255, 199, 206)
+                    End If
+                ElseIf pbomStatus = "CM Remove Level" Then
+                    wsPBOM.Cells(i, "BA").Value = "N/A"
+                End If
+
+                ' BB - Phase Match
+                ebomPhase = Trim(wsEBOM.Cells(j, "G").Value)
+                If pbomStatus = "Replace" Then
+                    If pbomProposedPhase = ebomPhase Then
+                        wsPBOM.Cells(i, "BB").Value = pbomProposedPhase
+                    Else
+                        wsPBOM.Cells(i, "BB").Value = "Mismatch"
+                        wsPBOM.Cells(i, "BB").Interior.Color = RGB(255, 199, 206)
+                    End If
+                ElseIf pbomStatus = "Accepted" Then
+                    If pbomPhase = ebomPhase Then
+                        wsPBOM.Cells(i, "BB").Value = pbomPhase
+                    Else
+                        wsPBOM.Cells(i, "BB").Value = "Mismatch"
+                        wsPBOM.Cells(i, "BB").Interior.Color = RGB(255, 199, 206)
+                    End If
+                End If
+
+                ' BC - Quantity Match
+                ebomQty = wsEBOM.Cells(j, "I").Value
+                If pbomQty = ebomQty Then
+                    wsPBOM.Cells(i, "BC").Value = pbomQty
+                ElseIf pbomProposedQty = ebomQty And pbomProposedQty <> "" Then
+                    wsPBOM.Cells(i, "BC").Value = pbomProposedQty
+                ElseIf pbomQty = "" And pbomProposedQty = "" Then
+                    wsPBOM.Cells(i, "BC").Value = "N/A"
+                Else
+                    wsPBOM.Cells(i, "BC").Value = "Mismatch"
+                    wsPBOM.Cells(i, "BC").Interior.Color = RGB(255, 199, 206)
+                End If
+
+                ' BD - Status Match
+                ebomStatus = Trim(wsEBOM.Cells(j, "H").Value)
+                If pbomStatus = "Replace" Then
+                    If pbomProposedStatus = ebomStatus Then
+                        wsPBOM.Cells(i, "BD").Value = pbomProposedStatus
+                    Else
+                        wsPBOM.Cells(i, "BD").Value = "Mismatch"
+                        wsPBOM.Cells(i, "BD").Interior.Color = RGB(255, 199, 206)
+                    End If
+                ElseIf pbomStatus = "Released" Then
+                    If pbomStatus = ebomStatus Then
+                        wsPBOM.Cells(i, "BD").Value = pbomStatus
+                    Else
+                        wsPBOM.Cells(i, "BD").Value = "Mismatch"
+                        wsPBOM.Cells(i, "BD").Interior.Color = RGB(255, 199, 206)
+                    End If
+                ElseIf pbomStatus = "CM Remove Level" Then
+                    wsPBOM.Cells(i, "BD").Value = "N/A"
+                End If
+
+                Exit For
+            End If
+        Next j
+
+        ' No match in EBOM
+        If Not foundMatch Then
+            wsPBOM.Cells(i, "AZ").Resize(1, 5).Value = "Mismatch"
+            wsPBOM.Range(wsPBOM.Cells(i, "AZ"), wsPBOM.Cells(i, "BD")).Interior.Color = RGB(255, 199, 206)
         End If
-
-        displayName = Trim(ws.Cells(i, "B").Value)
-        eid = Trim(ws.Cells(i, "AQ").Value)
-        If displayName = eid Then
-            ws.Cells(i, "AU").Value = eid
-            ws.Cells(i, "AU").Interior.Color = RGB(198, 239, 206)
-        Else
-            ws.Cells(i, "AU").Value = "Mismatch"
-            ws.Cells(i, "AU").Interior.Color = RGB(255, 199, 206)
-        End If
-
-        statusK = Trim(ws.Cells(i, "K").Value)
-        Select Case statusK
-            Case "CM Remove Level"
-                ws.Cells(i, "AV").Value = "Header"
-                ws.Rows(i).Interior.Color = RGB(221, 235, 247)
-            Case "Accepted", "Replace", "Out of Scope"
-                ws.Cells(i, "AV").Value = "MLI"
-                ws.Cells(i, "AV").Interior.Color = RGB(198, 239, 206)
-            Case Else
-                ws.Cells(i, "AV").Value = "Mismatch"
-                ws.Cells(i, "AV").Interior.Color = RGB(255, 199, 206)
-        End Select
-
-        phaseG = Trim(ws.Cells(i, "G").Value)
-        phaseP = Trim(ws.Cells(i, "P").Value)
-        Select Case True
-            Case statusK = "Accepted" And phaseG = "Production"
-                ws.Cells(i, "AW").Value = "DR"
-                ws.Cells(i, "AW").Interior.ColorIndex = xlNone
-            Case statusK = "Replace" And phaseP = "Production"
-                ws.Cells(i, "AW").Value = "DR"
-                ws.Cells(i, "AW").Interior.ColorIndex = xlNone
-            Case statusK = "Replace" And phaseP = "Development"
-                ws.Cells(i, "AW").Value = "SCH"
-                ws.Cells(i, "AW").Interior.ColorIndex = xlNone
-            Case statusK = "Out of Scope"
-                ws.Cells(i, "AW").Value = "Out of Scope"
-                ws.Cells(i, "AW").Interior.ColorIndex = xlNone
-            Case statusK = "CM Remove Level"
-                ws.Cells(i, "AW").Value = "Header"
-                ws.Cells(i, "AW").Interior.Color = RGB(221, 235, 247)
-            Case Else
-                ws.Cells(i, "AW").Value = "Mismatch"
-                ws.Cells(i, "AW").Interior.Color = RGB(255, 199, 206)
-        End Select
     Next i
 
-    ' Prompt user to save result
-    With Application.FileDialog(msoFileDialogSaveAs)
-        .Title = "Save PBOM Check Output"
-        .InitialFileName = "PBOM_Check_Result.xlsx"
-        .FilterIndex = 1
-        If .Show = -1 Then
-            savePath = .SelectedItems(1)
-            Application.DisplayAlerts = False
-            wbPBOM.SaveAs Filename:=savePath
-            Application.DisplayAlerts = True
-        Else
-            MsgBox "Save canceled. No file was saved.", vbExclamation
-        End If
-    End With
+    wbEBOM.Close SaveChanges:=False
+    wbPBOM.Save
 
     Application.ScreenUpdating = True
-
-    If errores > 0 Then
-        MsgBox errores & " rows have Final CM Approval different from 'Accepted'", vbExclamation, "PBOM Check"
-    Else
-        MsgBox "PBOM Check completed with no approval errors", vbInformation, "PBOM Check"
-    End If
+    MsgBox "PBOM vs EBOM comparison completed and saved.", vbInformation
 End Sub
