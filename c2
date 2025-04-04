@@ -29,6 +29,14 @@ Sub PBOMCheck()
 
     Application.ScreenUpdating = False
 
+    ' Replace formulas with plain values in all used cells
+    Dim cell As Range
+    For Each cell In ws.UsedRange
+        If cell.HasFormula Then
+            cell.Value = cell.Value
+        End If
+    Next cell
+
     ' Apply formatting before processing
     With ws
         .Rows(4).Interior.Color = RGB(200, 200, 200)
@@ -135,11 +143,8 @@ Sub PBOMCheck()
         End Select
     Next i
 
-    ' Message box before saving
+    ' Message box to notify user to save the file now
     MsgBox "Now save the New Unit Release file with the correct project name.", vbInformation, "Save File"
-
-    ' Convert all formulas to plain text values
-    ws.UsedRange.Value = ws.UsedRange.Value
 
     ' Ask user to save the result file
     With Application.FileDialog(msoFileDialogSaveAs)
