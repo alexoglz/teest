@@ -11,6 +11,9 @@ Sub PBOMCheck()
     Dim finalApproval As String, level As Variant
     Dim errores As Integer: errores = 0
 
+    ' Notify user before selecting the PBOM file
+    MsgBox "Please select the PBOM file to check.", vbInformation, "Select PBOM File"
+
     ' Ask user to select the PBOM file
     With Application.FileDialog(msoFileDialogFilePicker)
         .Title = "Select PBOM File"
@@ -28,31 +31,21 @@ Sub PBOMCheck()
 
     ' Apply formatting before processing
     With ws
-        ' Header row colors
         .Rows(4).Interior.Color = RGB(200, 200, 200)
         .Rows(5).Interior.Color = RGB(0, 112, 192)
         .Rows(5).Font.Color = RGB(255, 255, 255)
-
-        ' Highlight header cells in yellow
         .Range("B4,K4,M4,P4,Q4,R4,W4,X4,Y4,Z4,AR4").Interior.Color = RGB(255, 255, 0)
-
-        ' Merge and style PBOM Check section title
         .Range("AT3:AX3").Merge
         .Range("AT3").Value = "PBOM Check"
         .Range("AT3").HorizontalAlignment = xlCenter
         .Range("AT3").Font.Bold = True
-
-        ' Row 4 individual labels (no merge)
         .Range("AT4").Value = "CM ACTION - Notes"
         .Range("AU4").Value = "Display Name = EID"
         .Range("AV4").Value = "Header/MLI"
         .Range("AW4").Value = "DR/SCH/REMOVE"
         .Range("AX4").Value = "Piping"
-
-        ' Apply filter to row 4
         .Rows(4).AutoFilter
 
-        ' AutoFit selected columns
         Dim colList As Variant
         colList = Array("B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "U", _
                         "Y", "Z", "AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AI", "AJ", "AK", "AL", "AM", "AN", _
@@ -62,33 +55,24 @@ Sub PBOMCheck()
             .Columns(col).AutoFit
         Next col
 
-        ' Set specific column widths
         .Columns("T").ColumnWidth = 50
         .Columns("V").ColumnWidth = 50
         .Columns("W").ColumnWidth = 50
         .Columns("X").ColumnWidth = 50
         .Columns("AT").ColumnWidth = 70
         .Columns("AC").ColumnWidth = 70
-
-        ' Black separators
         .Columns("AS").ColumnWidth = 2
         .Columns("AS").Interior.Color = RGB(0, 0, 0)
         .Columns("AY").ColumnWidth = 2
         .Columns("AY").Interior.Color = RGB(0, 0, 0)
-
-        ' Adjust row heights
         .Rows.AutoFit
-
-        ' Freeze panes at C6
         .Activate
         .Range("C6").Select
         ActiveWindow.FreezePanes = True
     End With
 
-    ' Find last row
     lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
 
-    ' Process each row starting at 6
     For i = 6 To lastRow
         level = ws.Cells(i, "A").Value
         finalApproval = Trim(ws.Cells(i, "Y").Value)
@@ -117,7 +101,7 @@ Sub PBOMCheck()
                 ws.Cells(i, "AV").Value = "Header"
                 ws.Rows(i).Interior.Color = RGB(221, 235, 247)
             Case "Accepted", "Replace", "Out of Scope"
-                ws.Cells(i, "AV").Value = statusK
+                ws.Cells(i, "AV").Value = "MLI"
                 ws.Cells(i, "AV").Interior.ColorIndex = xlNone
             Case Else
                 ws.Cells(i, "AV").Value = statusK
