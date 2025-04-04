@@ -1,0 +1,88 @@
+' This macro compares PBOM (New Unit Release) against MBS based on Display Name (column B)
+' and validates Match for Replace (using Proposed Part) or Default (using Display Name).
+
+Sub ComparePBOMtoMBS()
+    Dim selectedPBOM As String
+    Dim selectedMBS As String
+    Dim wbPBOM As Workbook, wbMBS As Workbook
+    Dim wsPBOM As Worksheet, wsMBS As Worksheet
+    Dim lastRowPBOM As Long, lastRowMBS As Long
+    Dim i As Long, j As Long
+    Dim foundMatch As Boolean
+
+    Dim pbomDisplayName As String, pbomProposedPart As String, mbsValue As String
+    Dim pbomStatus As String
+
+    ' Ask user to select PBOM file (New Unit Release)
+    With Application.FileDialog(msoFileDialogFilePicker)
+        .Title = "Select New_Unit_Release File"
+        .Filters.Add "Excel Files", "*.xls; *.xlsx; *.xlsm", 1
+        If .Show <> -1 Then Exit Sub
+        selectedPBOM = .SelectedItems(1)
+        UserForm2.Hide
+    End With
+
+    ' Ask user to select MBS file
+    With Application.FileDialog(msoFileDialogFilePicker)
+        .Title = "Select MBS File"
+        .Filters.Add "Excel Files", "*.xls; *.xlsx; *.xlsm", 1
+        If .Show <> -1 Then Exit Sub
+        selectedMBS = .SelectedItems(1)
+    End With
+
+    Set wbPBOM = Workbooks.Open(selectedPBOM)
+    Set wsPBOM = wbPBOM.Sheets(1)
+    Set wbMBS = Workbooks.Open(selectedMBS, ReadOnly:=True)
+    Set wsMBS = wbMBS.Sheets(1)
+
+    lastRowPBOM = wsPBOM.Cells(wsPBOM.Rows.Count, "B").End(xlUp).Row
+    lastRowMBS = wsMBS.Cells(wsMBS.Rows.Count, "B").End(xlUp).Row
+
+    Application.ScreenUpdating = False
+
+    ' Insert Header and Separator
+    wsPBOM.Range("BF4").Value = "MBS"
+    wsPBOM.Range("BF4").Font.Bold = True
+    With wsPBOM.Columns("BE")
+        .ColumnWidth = 2
+        .Interior.Color = RGB(0, 0, 0)
+    End With
+
+    ' Loop through PBOM and compare with MBS
+    For i = 6 To lastRowPBOM
+        pbomStatus = Trim(wsPBOM.Cells(i, "K").Value)
+        pbomProposedPart = Trim(wsPBOM.Cells(i, "M").Value)
+        pbomDisplayName = Trim(wsPBOM.Cells(i, "B").Value)
+        foundMatch = False
+
+        If pbomStatus = "CM Remove Level" Then
+            wsPBOM.Cells(i, "BF").Value = "N/A"
+        Else
+            For j = 5 To lastRowMBS
+                mbsValue = Trim(wsMBS.Cells(j, "B").Value)
+
+                If (pbomStatus = "Replace" And pbomProposedPart = mbsValue) Then
+                    wsPBOM.Cells(i, "BF").Value = pbomProposedPart
+                    foundMatch = True
+                    Exit For
+                ElseIf (pbomStatus <> "Replace" And pbomDisplayName = mbsValue) Then
+                    wsPBOM.Cells(i, "BF").Value = pbomDisplayName
+                    foundMatch = True
+                    Exit For
+                End If
+            Next j
+
+            If Not foundMatch Then
+                wsPBOM.Cells(i, "BF").Value = "Mismatch"
+                wsPBOM.Cells(i, "BF").Interior.Color = RGB(255, 199, 206)
+            End If
+        End If
+    Next i
+
+    wbMBS.Close SaveChanges:=False
+    wbPBOM.Save
+
+    Application.ScreenUpdating = True
+
+    MsgBox "PBOM vs MBS comparison completed and saved.", vbInformation
+End Sub
