@@ -38,6 +38,11 @@ Sub ComparePBOMtoEBOM()
     Set wbEBOM = Workbooks.Open(selectedEBOM, ReadOnly:=True)
     Set wsEBOM = wbEBOM.Sheets(1)
 
+    ' Convert EBOM sheet to values only for comparison
+    With wsEBOM.UsedRange
+        .Value = .Value
+    End With
+
     lastRowPBOM = wsPBOM.Cells(wsPBOM.Rows.Count, "B").End(xlUp).Row
     lastRowEBOM = wsEBOM.Cells(wsEBOM.Rows.Count, "B").End(xlUp).Row
 
@@ -173,7 +178,6 @@ Sub ComparePBOMtoEBOM()
             End If
         Next j
 
-        ' No match at all
         If Not foundMatch Then
             wsPBOM.Cells(i, "AZ").Value = ""
             wsPBOM.Cells(i, "AZ").Interior.Color = RGB(255, 199, 206)
