@@ -1,3 +1,6 @@
+' This macro compares PBOM against EBOM based on Display Name (column B)
+' and validates EID, Part Number, Phase, Quantity, and Status.
+
 Sub ComparePBOMtoEBOM()
     Dim selectedPBOM As String
     Dim selectedEBOM As String
@@ -13,7 +16,7 @@ Sub ComparePBOMtoEBOM()
     Dim pbomQty As Variant, pbomProposedQty As Variant, ebomQty As Variant
     Dim pbomStatus As String, pbomProposedStatus As String, ebomStatus As String
 
-    ' Ask user to select the PBOM file (from PBOMCheck)
+    MsgBox "Please select the New Unit Release file (PBOM output).", vbInformation
     With Application.FileDialog(msoFileDialogFilePicker)
         .Title = "Select New_Unit_Release File (PBOM Output)"
         .Filters.Add "Excel Files", "*.xls; *.xlsx; *.xlsm", 1
@@ -22,7 +25,7 @@ Sub ComparePBOMtoEBOM()
         UserForm2.Hide
     End With
 
-    ' Ask user to select EBOM file
+    MsgBox "Please select the EBOM file for this project.", vbInformation
     With Application.FileDialog(msoFileDialogFilePicker)
         .Title = "Select EBOM File"
         .Filters.Add "Excel Files", "*.xls; *.xlsx; *.xlsm", 1
@@ -40,7 +43,6 @@ Sub ComparePBOMtoEBOM()
 
     Application.ScreenUpdating = False
 
-    ' EBOM Header setup
     wsPBOM.Range("AZ3:BD3").Merge
     With wsPBOM.Range("AZ3")
         .Value = "EBOM"
@@ -53,13 +55,11 @@ Sub ComparePBOMtoEBOM()
     wsPBOM.Range("BC4").Value = "QTY"
     wsPBOM.Range("BD4").Value = "STATUS"
 
-    ' Add black separator at column AY
     With wsPBOM.Columns("AY")
         .ColumnWidth = 2
         .Interior.Color = RGB(0, 0, 0)
     End With
 
-    ' Start comparisons row by row
     For i = 6 To lastRowPBOM
         pbomEID = Trim(wsPBOM.Cells(i, "B").Value)
         pbomPN = Trim(wsPBOM.Cells(i, "D").Value)
@@ -80,87 +80,103 @@ Sub ComparePBOMtoEBOM()
                 foundMatch = True
 
                 ' AZ - EID Match
-                wsPBOM.Cells(i, "AZ").Value = pbomEID
+                If pbomStatus = "CM Remove Level" Then
+                    wsPBOM.Cells(i, "AZ").Value = pbomEID
+                Else
+                    wsPBOM.Cells(i, "AZ").Value = ebomEID
+                End If
 
-                ' BA - Part Number Match
+                ' BA - Part Number
                 ebomPN = Trim(wsEBOM.Cells(j, "C").Value)
                 If pbomStatus = "Replace" Then
                     If pbomProposedPN = ebomPN Then
                         wsPBOM.Cells(i, "BA").Value = pbomProposedPN
                     Else
-                        wsPBOM.Cells(i, "BA").Value = "Mismatch"
+                        wsPBOM.Cells(i, "BA").Value = ebomPN
                         wsPBOM.Cells(i, "BA").Interior.Color = RGB(255, 199, 206)
                     End If
                 ElseIf pbomStatus = "Accepted" Then
                     If pbomPN = ebomPN Then
                         wsPBOM.Cells(i, "BA").Value = pbomPN
                     Else
-                        wsPBOM.Cells(i, "BA").Value = "Mismatch"
+                        wsPBOM.Cells(i, "BA").Value = ebomPN
                         wsPBOM.Cells(i, "BA").Interior.Color = RGB(255, 199, 206)
                     End If
                 ElseIf pbomStatus = "CM Remove Level" Then
-                    wsPBOM.Cells(i, "BA").Value = "N/A"
+                    wsPBOM.Cells(i, "BA").Value = "Header"
+                ElseIf pbomStatus = "Out of Scope" Then
+                    wsPBOM.Cells(i, "BA").Value = "Out of Scope"
                 End If
 
-                ' BB - Phase Match
+                ' BB - Phase
                 ebomPhase = Trim(wsEBOM.Cells(j, "G").Value)
                 If pbomStatus = "Replace" Then
                     If pbomProposedPhase = ebomPhase Then
                         wsPBOM.Cells(i, "BB").Value = pbomProposedPhase
                     Else
-                        wsPBOM.Cells(i, "BB").Value = "Mismatch"
+                        wsPBOM.Cells(i, "BB").Value = ebomPhase
                         wsPBOM.Cells(i, "BB").Interior.Color = RGB(255, 199, 206)
                     End If
                 ElseIf pbomStatus = "Accepted" Then
                     If pbomPhase = ebomPhase Then
                         wsPBOM.Cells(i, "BB").Value = pbomPhase
                     Else
-                        wsPBOM.Cells(i, "BB").Value = "Mismatch"
+                        wsPBOM.Cells(i, "BB").Value = ebomPhase
                         wsPBOM.Cells(i, "BB").Interior.Color = RGB(255, 199, 206)
                     End If
+                ElseIf pbomStatus = "CM Remove Level" Then
+                    wsPBOM.Cells(i, "BB").Value = "Header"
+                ElseIf pbomStatus = "Out of Scope" Then
+                    wsPBOM.Cells(i, "BB").Value = "Out of Scope"
                 End If
 
-                ' BC - Quantity Match
+                ' BC - Quantity
                 ebomQty = wsEBOM.Cells(j, "I").Value
-                If pbomQty = ebomQty Then
+                If pbomQty = "" And pbomProposedQty = "" Then
+                    wsPBOM.Cells(i, "BC").Value = "No Qty"
+                    wsPBOM.Cells(i, "BC").Interior.Color = RGB(255, 199, 206)
+                ElseIf pbomQty = ebomQty Then
                     wsPBOM.Cells(i, "BC").Value = pbomQty
                 ElseIf pbomProposedQty = ebomQty And pbomProposedQty <> "" Then
                     wsPBOM.Cells(i, "BC").Value = pbomProposedQty
-                ElseIf pbomQty = "" And pbomProposedQty = "" Then
-                    wsPBOM.Cells(i, "BC").Value = "N/A"
                 Else
-                    wsPBOM.Cells(i, "BC").Value = "Mismatch"
+                    wsPBOM.Cells(i, "BC").Value = ""
                     wsPBOM.Cells(i, "BC").Interior.Color = RGB(255, 199, 206)
                 End If
 
-                ' BD - Status Match
+                ' BD - Status
                 ebomStatus = Trim(wsEBOM.Cells(j, "H").Value)
                 If pbomStatus = "Replace" Then
                     If pbomProposedStatus = ebomStatus Then
                         wsPBOM.Cells(i, "BD").Value = pbomProposedStatus
                     Else
-                        wsPBOM.Cells(i, "BD").Value = "Mismatch"
+                        wsPBOM.Cells(i, "BD").Value = ebomStatus
                         wsPBOM.Cells(i, "BD").Interior.Color = RGB(255, 199, 206)
                     End If
-                ElseIf pbomStatus = "Released" Then
-                    If pbomStatus = ebomStatus Then
-                        wsPBOM.Cells(i, "BD").Value = pbomStatus
+                ElseIf pbomStatus = "Accepted" Then
+                    If pbomQty = ebomStatus Then
+                        wsPBOM.Cells(i, "BD").Value = pbomQty
                     Else
-                        wsPBOM.Cells(i, "BD").Value = "Mismatch"
+                        wsPBOM.Cells(i, "BD").Value = ebomStatus
                         wsPBOM.Cells(i, "BD").Interior.Color = RGB(255, 199, 206)
                     End If
                 ElseIf pbomStatus = "CM Remove Level" Then
-                    wsPBOM.Cells(i, "BD").Value = "N/A"
+                    wsPBOM.Cells(i, "BD").Value = "Header"
+                ElseIf pbomStatus = "Out of Scope" Then
+                    wsPBOM.Cells(i, "BD").Value = "Out of Scope"
+                Else
+                    wsPBOM.Cells(i, "BD").Value = ebomStatus
+                    wsPBOM.Cells(i, "BD").Interior.Color = RGB(255, 199, 206)
                 End If
 
                 Exit For
             End If
         Next j
 
-        ' No match in EBOM
+        ' No match at all
         If Not foundMatch Then
-            wsPBOM.Cells(i, "AZ").Resize(1, 5).Value = "Mismatch"
-            wsPBOM.Range(wsPBOM.Cells(i, "AZ"), wsPBOM.Cells(i, "BD")).Interior.Color = RGB(255, 199, 206)
+            wsPBOM.Cells(i, "AZ").Value = ""
+            wsPBOM.Cells(i, "AZ").Interior.Color = RGB(255, 199, 206)
         End If
     Next i
 
