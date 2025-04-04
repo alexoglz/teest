@@ -15,6 +15,7 @@ Sub ComparePBOMtoEBOM()
     Dim pbomPhase As String, pbomProposedPhase As String, ebomPhase As String
     Dim pbomQty As Variant, pbomProposedQty As Variant, ebomQty As Variant
     Dim pbomStatus As String, pbomProposedStatus As String, ebomStatus As String
+    Dim pbomStatusF As String
 
     MsgBox "Please select the New Unit Release file (PBOM output).", vbInformation
     With Application.FileDialog(msoFileDialogFilePicker)
@@ -37,11 +38,6 @@ Sub ComparePBOMtoEBOM()
     Set wsPBOM = wbPBOM.Sheets(1)
     Set wbEBOM = Workbooks.Open(selectedEBOM, ReadOnly:=True)
     Set wsEBOM = wbEBOM.Sheets(1)
-
-    ' Convert EBOM sheet to values only for comparison
-    With wsEBOM.UsedRange
-        .Value = .Value
-    End With
 
     lastRowPBOM = wsPBOM.Cells(wsPBOM.Rows.Count, "B").End(xlUp).Row
     lastRowEBOM = wsEBOM.Cells(wsEBOM.Rows.Count, "B").End(xlUp).Row
@@ -75,6 +71,7 @@ Sub ComparePBOMtoEBOM()
         pbomProposedQty = wsPBOM.Cells(i, "Q").Value
         pbomStatus = Trim(wsPBOM.Cells(i, "K").Value)
         pbomProposedStatus = Trim(wsPBOM.Cells(i, "O").Value)
+        pbomStatusF = Trim(wsPBOM.Cells(i, "F").Value)
 
         foundMatch = False
 
@@ -159,8 +156,8 @@ Sub ComparePBOMtoEBOM()
                         wsPBOM.Cells(i, "BD").Interior.Color = RGB(255, 199, 206)
                     End If
                 ElseIf pbomStatus = "Accepted" Then
-                    If pbomQty = ebomStatus Then
-                        wsPBOM.Cells(i, "BD").Value = pbomQty
+                    If pbomStatusF = ebomStatus Then
+                        wsPBOM.Cells(i, "BD").Value = pbomStatusF
                     Else
                         wsPBOM.Cells(i, "BD").Value = ebomStatus
                         wsPBOM.Cells(i, "BD").Interior.Color = RGB(255, 199, 206)
@@ -178,6 +175,7 @@ Sub ComparePBOMtoEBOM()
             End If
         Next j
 
+        ' No match at all
         If Not foundMatch Then
             wsPBOM.Cells(i, "AZ").Value = ""
             wsPBOM.Cells(i, "AZ").Interior.Color = RGB(255, 199, 206)
