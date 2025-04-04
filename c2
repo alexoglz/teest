@@ -11,7 +11,7 @@ Sub PBOMCheck()
     Dim finalApproval As String, level As Variant
     Dim errores As Integer: errores = 0
 
-    ' Notify user before selecting the PBOM file
+    ' Message to guide the user before selecting the PBOM file
     MsgBox "Please select the PBOM file to check.", vbInformation, "Select PBOM File"
 
     ' Ask user to select the PBOM file
@@ -61,11 +61,14 @@ Sub PBOMCheck()
         .Columns("X").ColumnWidth = 50
         .Columns("AT").ColumnWidth = 70
         .Columns("AC").ColumnWidth = 70
+
         .Columns("AS").ColumnWidth = 2
         .Columns("AS").Interior.Color = RGB(0, 0, 0)
         .Columns("AY").ColumnWidth = 2
         .Columns("AY").Interior.Color = RGB(0, 0, 0)
+
         .Rows.AutoFit
+
         .Activate
         .Range("C6").Select
         ActiveWindow.FreezePanes = True
@@ -131,6 +134,9 @@ Sub PBOMCheck()
                 ws.Cells(i, "AW").Interior.Color = RGB(255, 199, 206)
         End Select
     Next i
+
+    ' Message box to notify user to save the file now
+    MsgBox "Now save the New Unit Release file with the correct project name.", vbInformation, "Save File"
 
     ' Ask user to save the result file
     With Application.FileDialog(msoFileDialogSaveAs)
